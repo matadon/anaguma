@@ -13,17 +13,25 @@ module Kusuri
             end
 
             def self.merge(boolean, *queries)
-                return(new(queries.first._criteria)) if (queries.length == 1)
+                new(merge_criteria(boolean, queries.map(&:_criteria)))
+            end
+
+            private
+
+            def self.merge_criteria(boolean, criteria)
+                return(criteria.first) if (criteria.length == 1)
                 selectors = []
-                criteria = queries.map(&:_criteria)
-                without_conditions = criteria.inject(nil) do |memo, item|
+                merged_criteria = criteria.inject(nil) do |memo, item|
                      selectors.push(item.selector) unless item.selector.empty?
                      empty_criteria = item.clone
                      empty_criteria.selector = Origin::Selector.new
                      memo ? memo.merge(empty_criteria) : empty_criteria
                 end
-                new(without_conditions.where("$#{boolean}" => selectors))
+                return(merged_criteria) if selectors.empty?
+                merged_criteria.where("$#{boolean}" => selectors)
             end
+
+            public
 
             def initialize(criteria)
                 @_criteria = criteria
