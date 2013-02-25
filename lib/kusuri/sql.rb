@@ -1,1 +1,0 @@
-require 'kusuri/sql/compiler'

@@ -56,7 +56,8 @@ module Kusuri
         end
 
         def parser
-            @parser ||= (inherited_attribute(:parser).compact.first \
+            @_parser ||= (@parser \
+                or inherited_attribute(:parser).compact.first \
                 or Kusuri::Parser::SimpleSearchParser).new
         end
 
@@ -78,6 +79,7 @@ module Kusuri
                 next(memo.push(compile(node))) if node.group?
                 memo.concat(match_and_apply_rules(node))
             end
+            return(subqueries.first) if (subqueries.length < 2)
             query_class.merge(root.predicate, *subqueries)
         end
 

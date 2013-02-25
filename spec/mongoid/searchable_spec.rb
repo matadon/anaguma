@@ -3,8 +3,8 @@ require "spec_helper"
 require "kusuri/searchable"
 
 MongoidTesting.test(self, "Searchable") do
-    before(:all) { MongoidTesting::User.send(:include,
-        Kusuri::Searchable) }
+    # before(:all) { MongoidTesting::User.send(:include,
+    #     Kusuri::Searchable) }
 
     pending "implement"
     # the role of searchable is to autoconfigure itself for a mongoid model;

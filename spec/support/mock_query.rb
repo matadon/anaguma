@@ -3,7 +3,7 @@ require 'kusuri/builder'
 module Kusuri
     class MockQuery
         def self.merge(predicate, *queries)
-            return(queries.first) if (queries.length < 2)
+            return(queries.first.to_s) if (queries.length < 2)
             merged = queries.map(&:to_s).unshift(predicate).join(" ")
             new("(#{merged})")
         end

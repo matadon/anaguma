@@ -20,13 +20,13 @@ describe Kusuri::Builder do
         it "builder context" do
             state.should_receive(:target)
             builder = Kusuri::Builder.new(state)
-            builder.instance_eval { target }
+            builder.eval { target }
         end
 
         it "local context" do
             state.should_receive(:target)
             builder = Kusuri::Builder.new(state)
-            builder.instance_eval { |b| b.target }
+            builder.eval { |b| b.target }
         end
     end
 

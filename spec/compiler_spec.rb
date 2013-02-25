@@ -19,7 +19,7 @@ describe Kusuri::Compiler do
 
         it "configurable when instantiated" do
             parser = Class.new
-            compiler.new(nil, parser).should be_an_instance_of(parser)
+            compiler.new(nil, parser).parser.should be_a(parser)
         end
 
         it "inherits" do
@@ -53,6 +53,7 @@ describe Kusuri::Compiler do
 
         it "configurable when instantiated" do
             query.should_receive(:target)
+            compiler.delegate(:target, to: :base)
             compiler.new(query).target
         end
 
@@ -292,8 +293,7 @@ describe Kusuri::Compiler do
         let(:compiler) do
             Class.new(Kusuri::Compiler) do
                 base(Kusuri::MockQuery.new)
-
-                delegate :condition, to: :builder
+                delegate(:condition, to: :builder)
             end
         end
 
@@ -305,21 +305,21 @@ describe Kusuri::Compiler do
 
         it "match everything" do
             compiler.match(:action)
-            compiler.rule(:action) { |t| condition(t) }
+            compiler.rule(:action) { condition(term) }
             result = instance.parse("name: alice")
             result.to_s.should == "name:eq:alice"
         end
 
         it "or-group" do
             compiler.match(:action)
-            compiler.rule(:action) { |t| condition(t) }
+            compiler.rule(:action) { condition(term) }
             result = instance.parse("name: alice or name: bob")
             result.to_s.should == "(or name:eq:alice name:eq:bob)"
         end
 
         it "and-group" do
             compiler.match(:action)
-            compiler.rule(:action) { |t| condition(t) }
+            compiler.rule(:action) { condition(term) }
             result = instance.parse("name > a name < j")
             result.to_s.should == "(and name:gt:a name:lt:j)"
         end

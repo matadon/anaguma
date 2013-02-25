@@ -4,7 +4,7 @@ require 'kusuri/matcher'
 describe Kusuri::Matcher do
     let(:context) { double("Compiler") }
 
-    let(:term) { double("Term") }
+    let(:term) { double("Term", matchers: []) }
 
     it "sortable" do
         first = Kusuri::Matcher.new(rank: 10)

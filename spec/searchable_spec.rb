@@ -45,19 +45,6 @@ describe Kusuri::Searchable do
     end
 
     context ".compiler_for" do
-        context "active_record", if: ActiveRecordTesting.setup? do
-            it "model" do
-                engine = subject.compiler_for(ActiveRecordTesting::User)
-                expect(engine).to be(Kusuri::ActiveRecord::Compiler)
-            end
-
-            it "model subclass" do
-                subclass = Class.new(ActiveRecordTesting::User)
-                engine = subject.compiler_for(subclass)
-                expect(engine).to be(Kusuri::ActiveRecord::Compiler)
-            end
-        end
-
         context "mongoid", if: MongoidTesting.setup? do
             it "model" do
                 engine = subject.compiler_for(MongoidTesting::User)
@@ -78,13 +65,6 @@ describe Kusuri::Searchable do
     end
 
     context ".included into" do
-        it "active_record", if: ActiveRecordTesting.setup? do
-            subclass = Class.new(ActiveRecordTesting::User)
-            expect(subclass).not_to respond_to(:search)
-            subclass.send(:include, Kusuri::Searchable)
-            expect(subclass).to respond_to(:search)
-        end
-
         it "mongoid", if: MongoidTesting.setup? do
             subclass = Class.new(MongoidTesting::User)
             expect(subclass).not_to respond_to(:search)
@@ -107,15 +87,6 @@ describe Kusuri::Searchable do
         it "requires a target" do
             expect(lambda { proxy.value }).to \
                 raise_error(Kusuri::Searchable::ProxyWithoutTarget)
-        end
-
-        it "requires target.model" do
-            bad_target = double(:target, value: 42)
-            expect(lambda { proxy.use(bad_target) }).to \
-                raise_error(RSpec::Mocks::MockExpectationError)
-
-            good_target = double(:target, value: 42, model: nil)
-            expect(lambda { proxy.use(good_target) }).to_not raise_error
         end
 
         it "delegates" do

@@ -39,6 +39,6 @@ describe Kusuri::MatchedTerm do
 
     context "reject" do
         it { expect(matched_term).to_not be_rejected }
-        it { expect(matched_term.reject).to be_rejected }
+        it { expect(matched_term.reject!).to be_rejected }
     end
 end
