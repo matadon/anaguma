@@ -106,9 +106,6 @@ describe Kusuri::Parser do
             parse("age ~ 25", to: "(and (and age:like:25))")
         end
         
-        # s/"(\(and\|or\) \(.*\))"/"(and (\1 \2))"/g
-        # s/'(\(and\|or\) \(.*\))'/'(and (\1 \2))'/g
-
         context "inverse" do
             parse("!is:mine", to: "(and (and !is:ne:mine))")
             parse("! is:mine", to: "(and (and !is:ne:mine))")
@@ -153,6 +150,13 @@ describe Kusuri::Parser do
             parse('"not"', to: '(and (and :eq:"not"))')
             parse('"field:"', to: '(and (and :eq:"field:"))')
             parse('"\\"escaped\\""', to: '(and (and :eq:""escaped""))')
+        end
+
+        context "field names" do
+            parse("a: A", to: "(and (and a:eq:A))")
+            parse("a-a: A", to: "(and (and a-a:eq:A))")
+            parse("a_a: A", to: "(and (and a_a:eq:A))")
+            parse("a0a: A", to: "(and (and :eq:a0a: :eq:A))")
         end
     end
 end
