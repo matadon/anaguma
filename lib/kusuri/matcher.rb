@@ -43,9 +43,12 @@ module Kusuri
         end
 
         def run_method_or_block(context, runnable, *args)
-            return(context.send(runnable, *args)) \
-                unless runnable.is_a?(Proc)
-            context.instance_exec(*args, &runnable)
+            return(context.instance_exec(*args, &runnable)) \
+                if runnable.is_a?(Proc)
+            expected_argument_count = context.method(runnable).arity
+            args = args.slice(0, expected_argument_count) \
+                unless (expected_argument_count < 0)
+            return(context.send(runnable, *args))
         end
     end
 end

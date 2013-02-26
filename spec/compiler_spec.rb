@@ -94,6 +94,12 @@ describe Kusuri::Compiler do
             compiler.rule(:generic) { self }
             instance.call(:generic).should == instance
         end
+
+        it "early return" do
+            compiler.rule(:generic) { return }
+            expect(-> { instance.call(:generic) }) \
+                .to_not raise_error(LocalJumpError)
+        end
     end
 
     context "#apply_matcher_to_term" do
@@ -189,10 +195,22 @@ describe Kusuri::Compiler do
             result.first.should == term.value
         end
 
+        it "if-condition early return" do
+            compiler.match(:generic) { return }
+            expect(-> { instance.match_and_apply_rules(term) }) \
+                .to_not raise_error(LocalJumpError)
+        end
+
         it "unless-condition uses compiler instance context" do
             compiler.match(:generic, unless: Proc.new { term.value == 'bob' })
             result = instance.match_and_apply_rules(term)
             result.first.should == term.value
+        end
+
+        it "unless-condition early return" do
+            compiler.match(:generic, unless: -> { return })
+            expect(-> { instance.match_and_apply_rules(term) }) \
+                .to_not raise_error(LocalJumpError)
         end
 
         it "matches multiple times" do

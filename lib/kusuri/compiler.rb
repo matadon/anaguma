@@ -22,7 +22,8 @@ module Kusuri
 
         def self.match(*args, &block)
             options = args.last.is_a?(Hash) ? args.pop.dup : {}
-            options[:if] ||= block if block_given?
+            options[:if] ||= create_non_conflicting_method(:match, &block) \
+                if block_given?
             options[:rule] ||= args.first
             (@matchers ||= []).push(Matcher.new(options))
             self
@@ -32,8 +33,17 @@ module Kusuri
             @rules ||= {}
             raise(ArgumentError, "Rule #{name} already defined.") \
                 if @rules[name.to_s]
-            @rules[name.to_s] = block
+            @rules[name.to_s] = create_non_conflicting_method(:rule,
+                name, &block)
             self
+        end
+
+        def self.create_non_conflicting_method(scope, name = nil, &block)
+            method_name = "_#{scope}"
+            method_name << "_#{name}" if name
+            method_name << "_#{Time.now.to_i}#{Time.now.usec}"
+            define_method(method_name, &block)
+            method_name
         end
 
         def self.filter(*args, &block)
@@ -106,7 +116,7 @@ module Kusuri
                 .inject({}) { |memo, ruleset| memo.merge(ruleset) }
             rule = @rules[name.to_s] or raise(NotImplementedError, 
                 "Rule #{name} undefined for #{self.class}")
-            instance_eval(&rule)
+            send(rule)
         end
 
         def inherited_attribute(name)

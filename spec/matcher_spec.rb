@@ -83,6 +83,7 @@ describe Kusuri::Matcher do
                 end
 
                 it "not match" do
+                    term.should_not_receive(:matchers)
                     matcher = Kusuri::Matcher.new(method => 'weight')
                     expect(matcher).to_not be_match(context, term)
                 end
@@ -94,6 +95,7 @@ describe Kusuri::Matcher do
                 end
 
                 it "not empty" do
+                    term.should_not_receive(:matchers)
                     term.stub(:field).and_return(nil)
                     matcher = Kusuri::Matcher.new(method => 'age')
                     expect(matcher).to_not be_match(context, term)
