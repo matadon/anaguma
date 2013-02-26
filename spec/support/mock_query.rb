@@ -17,7 +17,7 @@ module Kusuri
         end
 
         def condition(term)
-            updated = [ @condition, term.to_s ].compact.join(" ")
+            updated = [ @condition, term.to_s ].compact.join(" ").strip
             self.class.new(updated)
         end
 

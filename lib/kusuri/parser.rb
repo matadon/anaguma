@@ -17,14 +17,6 @@ module Kusuri
                 (predicate.nil? or predicate.and?) ? :and : :or
             end
 
-            def groups
-                traverse(self) { |n| n.is_a?(Group) }
-            end
-
-            def terms
-                traverse(self) { |n| n.is_a?(Term) }
-            end
-
             def each
                 traverse(self) { |node|
                     yield(node) if (node.is_a?(Term) or node.is_a?(Group)) }
@@ -100,10 +92,6 @@ module Kusuri
         class Predicate < Treetop::Runtime::SyntaxNode
             def content
                 text_value.strip.downcase
-            end
-
-            def or?
-                (content == 'or') or (content == '||')
             end
 
             def and?

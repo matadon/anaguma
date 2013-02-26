@@ -15,8 +15,15 @@ module Kusuri
             self
         end
 
-        def self.base(base)
-            @base = base
+        def self.query_class(query_class)
+            @query_class = query_class
+            self
+        end
+
+        def self.query_methods(*query_methods)
+            query_methods.flatten!
+            (@query_methods ||= []).concat(query_methods)
+            delegate(*query_methods, to: :builder)
             self
         end
 
@@ -38,8 +45,8 @@ module Kusuri
             self
         end
 
-        def self.create_non_conflicting_method(scope, name = nil, &block)
-            method_name = "_#{scope}"
+        def self.create_non_conflicting_method(group, name = nil, &block)
+            method_name = "_#{group}"
             method_name << "_#{name}" if name
             method_name << "_#{Time.now.to_i}#{Time.now.usec}"
             define_method(method_name, &block)
@@ -57,12 +64,8 @@ module Kusuri
             self
         end
 
-        def initialize(base = nil, parser = nil)
-            @base, @parser = base, parser
-        end
-
-        def query_class
-            @query_class ||= base.class
+        def initialize(scope = nil, parser = nil)
+            @scope, @parser = scope, parser
         end
 
         def parser
@@ -71,9 +74,18 @@ module Kusuri
                 or Kusuri::Parser::SimpleSearchParser).new
         end
 
-        def base
-            @base ||= inherited_attribute(:base).compact.first \
-                or raise(RuntimeError, "No Query base specified")
+        def query_class
+            @_query_class ||= inherited_attribute(:query_class).compact.first \
+                or raise(RuntimeError, "No query_class specified.")
+        end
+
+        def query_methods
+            @_query_methods ||= inherited_attribute(:query_methods).compact \
+                .first or raise(RuntimeError, "No query_methods specified.")
+        end
+
+        def scope
+            @scope or raise(RuntimeError, "No scope specified.")
         end
 
         def search(search)
@@ -81,7 +93,7 @@ module Kusuri
         end
 
         def parse(search)
-            compile(parser.parse(search)) || base
+            compile(parser.parse(search)) || query_class.new(scope)
         end
  
         def compile(root)
@@ -105,7 +117,7 @@ module Kusuri
         end
 
         def apply_matcher_to_term(matcher, term)
-            @builder = base.class.builder(base)
+            @builder = Builder.new(query_class.new(scope), *query_methods)
             @term, @matcher = term, matcher
             call(matcher.rule) if matcher.rule
             @builder.result

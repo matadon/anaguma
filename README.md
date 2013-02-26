@@ -9,6 +9,10 @@ Sequel, MongoDB, Solr and ElasticSearch.
 The user-facing search syntax is similar to the Google search syntax,
 including boolean logic and infix comparison operators.
 
+## Examples
+
+FIXME: Add examples showing how to use this thing. :)
+
 Kusuri was designed so that an application can expose a standard search
 syntax, one that is guaranteed to never return a syntax error to the
 end-user, in the same way that even a Google search that makes no sense will

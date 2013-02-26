@@ -6,8 +6,8 @@ module Kusuri
 
         attr_reader :term, :matchers
 
-        delegate :operator, :value, :quoting, :and?, :or?, :not?, :plaintext,
-            :to_s, to: :term
+        delegate :operator, :value, :quoting, :not?, :plaintext, :to_s,
+            to: :term
 
         def initialize(term)
             @term = term

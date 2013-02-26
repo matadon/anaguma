@@ -26,6 +26,12 @@ describe Kusuri::Parser do
                 expect(parse_tree_to_string(result)).to eq(options[:to])
             end
         end
+
+        context "term" do
+            pending "#plaintext"
+
+            pending "#quoting"
+        end
         
         context "malformed" do
             parse("", to: "(and)")

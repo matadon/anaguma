@@ -4,7 +4,9 @@ require 'kusuri/compiler'
 describe Kusuri::Compiler do
     let(:compiler) { Class.new(Kusuri::Compiler) }
 
-    let(:instance) { compiler.new }
+    let(:query) { String.new }
+
+    let(:instance) { compiler.new(query) }
 
     context ".parser" do
         it "default" do
@@ -38,30 +40,71 @@ describe Kusuri::Compiler do
         end
     end
 
-    context ".base" do
-        let(:query) { double("Query") }
-
-        it "required" do
-            expect(lambda { instance.base }).to raise_error(RuntimeError)
+    context ".query_class" do
+        it "no default value" do
+            expect(-> { compiler.new.query_class }) \
+                .to raise_error(RuntimeError)
         end
 
         it "configurable" do
-            compiler.base(query)
-            query.should_receive(:target)
-            instance.base.target
-        end
-
-        it "configurable when instantiated" do
-            query.should_receive(:target)
-            compiler.delegate(:target, to: :base)
-            compiler.new(query).target
+            query_class = Class.new
+            compiler.query_class(query_class)
+            expect(instance.query_class).to eq(query_class)
         end
 
         it "inherits" do
-            compiler.base(query)
+            query_class = Class.new
+            compiler.query_class(query_class)
             subclass = Class.new(compiler)
+            subclass.new.query_class.should eq(query_class)
+        end
+
+        it "overrides inherited" do
+            compiler.query_class(Class.new)
+            subclass = Class.new(compiler)
+            query_class = Class.new
+            subclass.query_class(query_class)
+            subclass.new.query_class.should eq(query_class)
+        end
+    end
+
+    context ".query_methods" do
+        it "no default value" do
+            expect(-> { instance.query_methods }).to raise_error(RuntimeError)
+        end
+
+        it "configurable" do
+            query_methods = %w(foo bar)
+            compiler.query_methods(query_methods)
+            expect(instance.query_methods).to eq(query_methods)
+        end
+
+        it "inherits" do
+            query_methods = %w(foo bar)
+            compiler.query_methods(query_methods)
+            subclass = Class.new(compiler)
+            subclass.new.query_methods.should eq(query_methods)
+        end
+
+        it "overrides inherited" do
+            compiler.query_methods(%w(foo bar))
+            subclass = Class.new(compiler)
+            query_methods = %w(foo bar)
+            subclass.query_methods(query_methods)
+            subclass.new.query_methods.should eq(query_methods)
+        end
+    end
+
+    context "#scope" do
+        it "required" do
+            expect(lambda { compiler.new.scope }) \
+                .to raise_error(RuntimeError)
+        end
+
+        it "gets configured by #new" do
             query.should_receive(:target)
-            subclass.new.base.target
+            compiler.delegate(:target, to: :scope)
+            compiler.new(query).target
         end
     end
 
@@ -107,10 +150,8 @@ describe Kusuri::Compiler do
 
         let(:term) { double("Term", field: 'name', value: 'alice') }
 
-        let(:query) { Kusuri::MockQuery.new }
-
-        before(:each) {
-            compiler.base(query).delegate(:condition, to: :builder) }
+        before(:each) { compiler.query_class(Kusuri::MockQuery) \
+            .query_methods(:condition) }
 
         it "returns a query" do
             compiler.rule(:generic) { condition('true') }
@@ -143,11 +184,9 @@ describe Kusuri::Compiler do
 
         let(:term) { double("Term", field: 'name', value: 'alice') }
 
-        let(:query) { Kusuri::MockQuery.new }
-
         before(:each) do
-            compiler.base(query) \
-                .delegate(:condition, to: :builder) \
+            compiler.query_class(Kusuri::MockQuery) \
+                .query_methods(:condition) \
                 .rule(:generic) { condition(term.value) }
         end
 
@@ -171,7 +210,7 @@ describe Kusuri::Compiler do
 
             subclass = Class.new(compiler)
 
-            result = subclass.new.match_and_apply_rules(term)
+            result = subclass.new(query).match_and_apply_rules(term)
             result.should be_a(Array)
             result.count.should == 1
             result.first.should be_a(Kusuri::MockQuery)
@@ -184,7 +223,7 @@ describe Kusuri::Compiler do
             subclass = Class.new(compiler)
             subclass.match(:generic)
 
-            result = subclass.new.match_and_apply_rules(term)
+            result = subclass.new(query).match_and_apply_rules(term)
             result.should be_a(Array)
             result.count.should == 2
         end
@@ -236,7 +275,7 @@ describe Kusuri::Compiler do
             compiler.match(:first)
             subclass.match(:second)
             subclass.match(:third)
-            subclass.new.match_and_apply_rules(term)
+            subclass.new(query).match_and_apply_rules(term)
         end
 
         it "orders matchers by rank" do
@@ -253,7 +292,7 @@ describe Kusuri::Compiler do
             compiler.match(:first, rank: 1000)
             subclass.match(:second, rank: 100)
             subclass.match(:third, rank: 10)
-            subclass.new.match_and_apply_rules(term)
+            subclass.new(query).match_and_apply_rules(term)
         end
 
         it "rejects terms" do
@@ -308,12 +347,8 @@ describe Kusuri::Compiler do
     end
 
     context "#parse" do
-        let(:compiler) do
-            Class.new(Kusuri::Compiler) do
-                base(Kusuri::MockQuery.new)
-                delegate(:condition, to: :builder)
-            end
-        end
+        before(:each) { compiler.query_class(Kusuri::MockQuery) \
+            .query_methods(:condition) }
 
         it "match nothing by default" do
             result = instance.parse("name: alice")

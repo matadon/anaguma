@@ -1,5 +1,4 @@
 require 'mongoid'
-require 'kusuri/builder'
 
 module Kusuri
     module Mongoid
@@ -7,10 +6,6 @@ module Kusuri
             include Enumerable
 
             attr_reader :_criteria
-
-            def self.builder(base)
-                Kusuri::Builder.new(base, :where, :compare)
-            end
 
             def self.merge(boolean, *queries)
                 new(merge_criteria(boolean, queries.map(&:_criteria)))
@@ -33,8 +28,9 @@ module Kusuri
 
             public
 
-            def initialize(criteria)
-                @_criteria = criteria
+            def initialize(scope)
+                @_criteria = scope unless scope.is_a?(self.class) 
+                @_criteria ||= scope._criteria
             end
 
             def where(conditions = {})
@@ -59,16 +55,6 @@ module Kusuri
                     .map(&builder) } if options[:all]
                 where(*conditions)
             end
-
-            #
-            # FIXME: Stolen from the old aggregation stuff; does it make
-            # sense here?
-            #
-            # def clear(*names)
-            #     names = names.map(&:to_s)
-            #     self.class.new(@clauses.reject { |k, v| names.include?(k) })
-            # end
-            #
 
             def aggregate(*pipeline)
                 collection.aggregate(*pipeline)
@@ -95,10 +81,6 @@ module Kusuri
 
             def each(&block)
                 instances.each(&block)
-            end
-
-            def to_s
-                @_criteria.inspect
             end
 
             private

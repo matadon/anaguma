@@ -7,7 +7,7 @@ describe Kusuri::MatchedTerm do
     let(:matched_term) { Kusuri::MatchedTerm.new(term) }
 
     context "delegates to a term" do
-        %w(operator value quoting and? or? not? plaintext).each do |method|
+        %w(operator value quoting not? plaintext).each do |method|
             it "##{method}" do
                 term.should_receive(method)
                 matched_term.send(method)

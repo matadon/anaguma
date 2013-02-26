@@ -14,6 +14,11 @@ describe Kusuri::Matcher do
     end
 
     context "#match?" do
+        it "rejects unknown options" do
+            expect(-> { Kusuri::Matcher.new(tubular: 'noobtastic') }) \
+                .to raise_error(ArgumentError)
+        end
+
         it "all by default" do
             matcher = Kusuri::Matcher.new
             expect(matcher).to be_match(context, term)
