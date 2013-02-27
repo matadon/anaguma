@@ -134,4 +134,11 @@ MongoidTesting.test(self, Kusuri::Mongoid::Compiler) do
                 and user.rentals.any? { |r| r.vehicle.make == 'Ford'} 
         end
     end
+
+    context "#autoconfigure" do
+        pending
+        # we pass it User, and it sets up match rules for that user
+        # user will then add their own rules afterwards
+        # permit and filter will need to go above everything else.
+    end
 end

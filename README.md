@@ -11,6 +11,20 @@ including boolean logic and infix comparison operators.
 
 ## Examples
 
+#### Searchable with MongoDB
+
+#### Searchable with ActiveRecord
+
+#### Searchable with Sequel
+
+#### Searchable with ElasticSearch
+
+#### Searchable with ElasticSearch and ActiveRecord
+
+#### Custom Grammar
+
+#### Custom Backend (Query / Compiler)
+
 FIXME: Add examples showing how to use this thing. :)
 
 Kusuri was designed so that an application can expose a standard search

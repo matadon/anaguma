@@ -36,7 +36,7 @@ module Kusuri
             end
 
             rule field
-                _name:[a-z\_\-]+ space? _infix:infix space? <Field>
+                _name:[a-zA-Z\_\-]+ space? _infix:infix space? <Field>
             end
 
             rule infix

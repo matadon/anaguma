@@ -12,23 +12,36 @@ module Kusuri
             end
 
             def predicate
-                predicate = find(self) { |node| 
+                predicate = find_node(actual_root) { |node| 
                     node.is_a?(Predicate) and (not node.not?) }
                 (predicate.nil? or predicate.and?) ? :and : :or
             end
 
             def each
-                traverse(self) { |node|
-                    yield(node) if (node.is_a?(Term) or node.is_a?(Group)) }
+                traverse(actual_root) do |node|
+                    yield(node) if (node.is_a?(Term) or node.is_a?(Group)) 
+                end
+            end
+
+            def to_s
+                "(#{inject([ predicate ]) { |m, n| m.push(n) }.join(' ')})"
             end
 
             private
 
-            def find(root, &block)
+            def actual_root
+                return(self) if (find_node(self) { |e| e.is_a?(Term) })
+                subgroups = traverse(self) { |e| e.is_a?(Group) }
+                return(self) unless (subgroups.count == 1)
+                subgroups.first
+            end
+
+            def find_node(root = nil, &block)
+                root ||= actual_root
                 return(root) if yield(root)
                 root.nonterminal? and root.elements.each do |node|
                     next if node.is_a?(Group)
-                    result = find(node, &block) and return(result)
+                    result = find_node(node, &block) and return(result)
                 end
                 nil
             end
@@ -38,6 +51,7 @@ module Kusuri
                 root.elements.inject([]) do |result, node|
                     next(result.push(node)) if yield(node)
                     next(result) if node.is_a?(Group)
+                    next(result) if node.is_a?(Term)
                     result.concat(traverse(node, &block))
                 end
             end
@@ -78,7 +92,7 @@ module Kusuri
                 prefix and prefix.nonterminal? and prefix.not?
             end
 
-            def plaintext
+            def text
                 text_value.strip
             end
 
