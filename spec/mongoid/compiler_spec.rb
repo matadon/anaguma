@@ -136,8 +136,8 @@ MongoidTesting.test(self, Kusuri::Mongoid::Compiler) do
     end
 
     context "#autoconfigure" do
-        pending
-        # we pass it User, and it sets up match rules for that user
+        # match on a list of fields
+        # if no field, match on 
         # user will then add their own rules afterwards
         # permit and filter will need to go above everything else.
     end

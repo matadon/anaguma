@@ -64,8 +64,10 @@ module Kusuri
             self
         end
 
-        def initialize(scope = nil, parser = nil)
-            @scope, @parser = scope, parser
+        def initialize(scope, parser = nil)
+            @scope = Builder.new(query_class.new(scope), *query_methods)
+            @builder = @scope
+            @parser = parser
         end
 
         def parser
@@ -85,7 +87,7 @@ module Kusuri
         end
 
         def scope
-            @scope or raise(RuntimeError, "No scope specified.")
+            @scope.result or raise(RuntimeError, "No scope specified.")
         end
 
         def search(search)

@@ -60,6 +60,18 @@ module Kusuri
                 collection.aggregate(*pipeline)
             end
 
+            def limit(count)
+                self.class.new(@_criteria.limit(count))
+            end
+
+            def skip(count)
+                self.class.new(@_criteria.skip(count))
+            end
+
+            def offset(count)
+                skip(count)
+            end
+
             def instances(reload = false)
                 @_instances = nil if reload
                 @_instances ||= @_criteria.to_a

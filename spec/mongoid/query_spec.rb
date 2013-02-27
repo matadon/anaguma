@@ -104,8 +104,6 @@ MongoidTesting.test(self, Kusuri::Mongoid::Query) do
             result = query.compare(term, all: %w(first_name last_name))
             expect(result.count).to eq(50)
         end
-
-        pending "confirm boolean logic"
     end
 
     context ".merge" do
@@ -132,9 +130,16 @@ MongoidTesting.test(self, Kusuri::Mongoid::Query) do
         end
     end
 
-    pending "#limit"
+    it "#limit" do
+        query.limit(1).tuples.count.should == 1
+        query.limit(10).tuples.count.should == 10
+    end
 
-    pending "#offset"
+    it "#offset" do
+        query.tuples[10].should == query.offset(10).tuples.first
+    end
 
-    pending "#skip"
+    it "#skip" do
+        query.tuples[10].should == query.skip(10).tuples.first
+    end
 end
