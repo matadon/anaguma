@@ -19,6 +19,7 @@ Gem::Specification.new do |gem|
     gem.require_paths = [ "lib" ]
     gem.rubygems_version = "1.8"
     gem.add_dependency("treetop", ">= 1.4.0")
+    gem.add_dependency("polyglot")
     gem.add_development_dependency("rspec", ">= 2.12.0")
     gem.add_development_dependency("rspec-core", ">= 2.12.0")
     gem.add_development_dependency("simplecov", ">= 0.7")

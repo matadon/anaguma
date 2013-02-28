@@ -1,6 +1,8 @@
 # encoding: utf-8
 
 require 'treetop'
+require 'polyglot'
+require 'kusuri/parser/simple_search'
 
 module Kusuri
     module Parser
@@ -173,7 +175,3 @@ module Kusuri
         end
     end
 end
-
-grammar_file = File.join(File.dirname(__FILE__), "parser",
-    "simple_search.treetop")
-Treetop.load(grammar_file)
