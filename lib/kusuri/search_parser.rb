@@ -2,10 +2,10 @@
 
 require 'treetop'
 require 'polyglot'
-require 'kusuri/parser/simple_search'
+require 'kusuri/search'
 
 module Kusuri
-    module Parser
+    module Search
         class Group < Treetop::Runtime::SyntaxNode
             include Enumerable
 
@@ -85,9 +85,9 @@ module Kusuri
 
             def quoting
                 content = _value.content
-                return(:single) if content.is_a?(SingleQuotedString)
-                return(:double) if content.is_a?(DoubleQuotedString)
-                return(:none)
+                return(:none) unless content.is_a?(QuotedString)
+                return(:single) if content.left == "'"
+                return(:double) if content.left == "\""
             end
 
             def not?
@@ -132,31 +132,24 @@ module Kusuri
         class Value < Treetop::Runtime::SyntaxNode
         end
 
-        class SingleQuotedString < Treetop::Runtime::SyntaxNode
+        class QuotedString < Treetop::Runtime::SyntaxNode
             def to_s
-                content.text_value.gsub(/\\\'/, "'")
+                @_cached ||= content.text_value.gsub( \
+                    /\\(#{quote(left)}|#{quote(right)})/, '\1')
             end
 
             def left
-                "'"
+                _left.text_value
             end
 
             def right
-                "'"
-            end
-        end
-
-        class DoubleQuotedString < Treetop::Runtime::SyntaxNode
-            def to_s
-                content.text_value.gsub(/\\\"/, '"')
+                _right.text_value
             end
 
-            def left
-                '"'
-            end
+            private
 
-            def right
-                '"'
+            def quote(value)
+                Regexp.quote(value)
             end
         end
 

@@ -1,9 +1,9 @@
 # encoding: utf-8
 require 'spec_helper'
-require 'kusuri/parser'
+require 'kusuri/search_parser'
 
-describe Kusuri::Parser do
-    let(:parser) { Kusuri::Parser::SimpleSearchParser.new }
+describe Kusuri::Search do
+    let(:parser) { Kusuri::SearchParser.new }
 
     context ".parse" do
         context "group structure" do
@@ -21,9 +21,9 @@ describe Kusuri::Parser do
 
             it "#each" do
                 terms = parser.parse("a b")
-                expect(terms).to be_any { |n| n.is_a?(Kusuri::Parser::Term) }
+                expect(terms).to be_any { |n| n.is_a?(Kusuri::Search::Term) }
                 groups = parser.parse("a and b or c")
-                expect(groups).to be_any { |n| n.is_a?(Kusuri::Parser::Group) }
+                expect(groups).to be_any { |n| n.is_a?(Kusuri::Search::Group) }
             end
 
             it "#to_s" do
@@ -34,7 +34,7 @@ describe Kusuri::Parser do
 
         context "term structure" do
             def first_term(query)
-                parser.parse(query).find { |t| t.is_a?(Kusuri::Parser::Term) }
+                parser.parse(query).find { |t| t.is_a?(Kusuri::Search::Term) }
             end
 
             it "#group?" do
@@ -133,7 +133,7 @@ describe Kusuri::Parser do
                 parse("and or or and or", to: "(and)")
                 parse("and or or and", to: "(and)")
                 parse("foo:", to: "(and)")
-                parse("foo or", to: "(and :eq:foo :eq:or)")
+                parse("foo or", to: "(and :eq:foo)")
                 parse("foo and", to: "(and :eq:foo)")
                 parse("foo and bar:", to: "(and :eq:foo)")
                 parse("foo: bar:", to: "(and foo:eq:bar:)")

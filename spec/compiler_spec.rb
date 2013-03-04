@@ -15,7 +15,7 @@ describe Kusuri::Compiler do
 
     context ".parser" do
         it "default" do
-            instance.parser.should be_a(Kusuri::Parser::SimpleSearchParser)
+            instance.parser.should be_a(Kusuri::SearchParser)
         end
 
         it "configurable" do

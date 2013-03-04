@@ -2,7 +2,7 @@ require 'kusuri/builder'
 require 'kusuri/delegation'
 require 'kusuri/matcher'
 require 'kusuri/matched_term'
-require 'kusuri/parser'
+require 'kusuri/search_parser'
 
 module Kusuri
     class Compiler
@@ -73,7 +73,7 @@ module Kusuri
         def parser
             @_parser ||= (@parser \
                 or inherited_attribute(:parser).compact.first \
-                or Kusuri::Parser::SimpleSearchParser).new
+                or Kusuri::SearchParser).new
         end
 
         def query_class
