@@ -1,10 +1,10 @@
-require 'kusuri/builder'
-require 'kusuri/delegation'
-require 'kusuri/matcher'
-require 'kusuri/matched_term'
-require 'kusuri/search_parser'
+require 'anaguma/builder'
+require 'anaguma/delegation'
+require 'anaguma/matcher'
+require 'anaguma/matched_term'
+require 'anaguma/search_parser'
 
-module Kusuri
+module Anaguma
     class Compiler
         include Delegation
 
@@ -73,7 +73,7 @@ module Kusuri
         def parser
             @_parser ||= (@parser \
                 or inherited_attribute(:parser).compact.first \
-                or Kusuri::SearchParser).new
+                or Anaguma::SearchParser).new
         end
 
         def query_class

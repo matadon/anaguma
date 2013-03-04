@@ -1,10 +1,10 @@
 require 'spec_helper'
-require 'kusuri/compiler'
+require 'anaguma/compiler'
 
-describe Kusuri::Compiler do
+describe Anaguma::Compiler do
     let(:compiler) do
-        Class.new(Kusuri::Compiler) do
-            query_class(Kusuri::MockQuery) 
+        Class.new(Anaguma::Compiler) do
+            query_class(Anaguma::MockQuery) 
             query_methods(:condition)
         end
     end
@@ -15,7 +15,7 @@ describe Kusuri::Compiler do
 
     context ".parser" do
         it "default" do
-            instance.parser.should be_a(Kusuri::SearchParser)
+            instance.parser.should be_a(Anaguma::SearchParser)
         end
 
         it "configurable" do
@@ -46,7 +46,7 @@ describe Kusuri::Compiler do
     end
 
     context ".query_class" do
-        let(:compiler) { Class.new(Kusuri::Compiler).query_methods(:foo) }
+        let(:compiler) { Class.new(Anaguma::Compiler).query_methods(:foo) }
 
         it "no default value" do
             expect(-> { instance.query_class }) \
@@ -54,28 +54,28 @@ describe Kusuri::Compiler do
         end
 
         it "configurable" do
-            compiler.query_class(Kusuri::MockQuery)
-            expect(instance.query_class).to eq(Kusuri::MockQuery)
+            compiler.query_class(Anaguma::MockQuery)
+            expect(instance.query_class).to eq(Anaguma::MockQuery)
         end
 
         it "inherits" do
-            compiler.query_class(Kusuri::MockQuery)
+            compiler.query_class(Anaguma::MockQuery)
             subclass = Class.new(compiler)
-            subclass.new(query).query_class.should eq(Kusuri::MockQuery)
+            subclass.new(query).query_class.should eq(Anaguma::MockQuery)
         end
 
         it "overrides inherited" do
-            compiler.query_class(Kusuri::MockQuery)
+            compiler.query_class(Anaguma::MockQuery)
             subclass = Class.new(compiler)
-            query_class = Class.new(Kusuri::MockQuery)
+            query_class = Class.new(Anaguma::MockQuery)
             subclass.query_class(query_class)
             subclass.new(query).query_class.should eq(query_class)
         end
     end
 
     context ".query_methods" do
-        let(:compiler) { Class.new(Kusuri::Compiler) \
-            .query_class(Kusuri::MockQuery) }
+        let(:compiler) { Class.new(Anaguma::Compiler) \
+            .query_class(Anaguma::MockQuery) }
 
         it "no default value" do
             expect(-> { instance.query_methods }).to raise_error(RuntimeError)
@@ -162,14 +162,14 @@ describe Kusuri::Compiler do
         it "returns a query" do
             compiler.rule(:generic) { condition('true') }
             result = instance.apply_matcher_to_term(matcher, term)
-            result.should be_an_instance_of(Kusuri::MockQuery)
+            result.should be_an_instance_of(Anaguma::MockQuery)
             result.should_not == query
         end
 
         it "builder" do
             compiler.rule(:generic) { condition(builder.class) }
             result = instance.apply_matcher_to_term(matcher, term)
-            result.should == "Kusuri::Builder"
+            result.should == "Anaguma::Builder"
         end
         
         it "term" do
@@ -203,7 +203,7 @@ describe Kusuri::Compiler do
             result = instance.match_and_apply_rules(term)
             result.should be_a(Array)
             result.count.should == 1
-            result.first.should be_a(Kusuri::MockQuery)
+            result.first.should be_a(Anaguma::MockQuery)
             result.first.should == term.value
         end
 
@@ -215,7 +215,7 @@ describe Kusuri::Compiler do
             result = subclass.new(query).match_and_apply_rules(term)
             result.should be_a(Array)
             result.count.should == 1
-            result.first.should be_a(Kusuri::MockQuery)
+            result.first.should be_a(Anaguma::MockQuery)
             result.first.should == term.value
         end
 
@@ -351,7 +351,7 @@ describe Kusuri::Compiler do
     context "#parse" do
         it "match nothing by default" do
             result = instance.parse("name: alice")
-            result.should be_a(Kusuri::MockQuery)
+            result.should be_a(Anaguma::MockQuery)
             result.to_s.should == ""
         end
 

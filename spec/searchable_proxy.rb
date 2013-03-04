@@ -1,16 +1,16 @@
 require "spec_helper"
-require "kusuri/searchable_proxy"
+require "anaguma/searchable_proxy"
 
-describe Kusuri::SearchableProxy do
+describe Anaguma::SearchableProxy do
     let(:compiler) { Class.new }
 
     let(:model) { Class.new }
 
-    let(:proxy) { Kusuri::SearchableProxy.new(model, compiler) }
+    let(:proxy) { Anaguma::SearchableProxy.new(model, compiler) }
 
     it "#new delegates" do
         compiler.should_receive(:ping)
-        proxy = Kusuri::SearchableProxy.new(model, compiler)
+        proxy = Anaguma::SearchableProxy.new(model, compiler)
         proxy.ping
     end
 

@@ -1,4 +1,4 @@
-module Kusuri
+module Anaguma
     class Matcher
         attr_reader :rule, :rank
 

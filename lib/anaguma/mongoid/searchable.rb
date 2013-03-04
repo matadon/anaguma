@@ -1,7 +1,7 @@
-require 'kusuri/searchable_proxy'
-require 'kusuri/mongoid/compiler'
+require 'anaguma/searchable_proxy'
+require 'anaguma/mongoid/compiler'
 
-module Kusuri
+module Anaguma
     module Mongoid
         module Searchable
             def self.included(base)
@@ -14,8 +14,8 @@ module Kusuri
 
             module ClassMethods
                 def searchable
-                    @_searchable ||= Kusuri::SearchableProxy.new(self, 
-                        Kusuri::Mongoid::Compiler)
+                    @_searchable ||= Anaguma::SearchableProxy.new(self, 
+                        Anaguma::Mongoid::Compiler)
                 end
 
                 def search(query)

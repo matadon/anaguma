@@ -1,7 +1,7 @@
 postgresql:
     adapter: postgresql
-    database: kusuri_gem_test
-    username: kusuri_gem_test
+    database: anaguma_gem_test
+    username: anaguma_gem_test
     password: QIe2aCON4GQ8yI4awtctRjeok7NWGTtB
     encoding: utf8
     pool: 1
@@ -10,8 +10,8 @@ postgresql:
 
 # mysql:
 #     adapter: mysql
-#     database: kusuri_gem_test
-#     username: kusuri_gem_test
+#     database: anaguma_gem_test
+#     username: anaguma_gem_test
 #     password: QIe2aCON4GQ8yI4awtctRjeok7NWGTtB
 #     encoding: utf8
 #     pool: 1

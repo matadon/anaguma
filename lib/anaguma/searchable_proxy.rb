@@ -3,7 +3,7 @@
 # avoid polluting the global Compiler class with model-specific matches, but
 # without a name, the backtrace is confusing...
 #
-module Kusuri
+module Anaguma
     class ProxyWithoutTargetError
     end
             

@@ -1,4 +1,4 @@
-module Kusuri
+module Anaguma
     module Delegation
         def self.included(base)
             base.send(:extend, self)

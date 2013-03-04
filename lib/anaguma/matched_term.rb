@@ -1,6 +1,6 @@
-require 'kusuri/delegation'
+require 'anaguma/delegation'
 
-module Kusuri
+module Anaguma
     class MatchedTerm
         include Delegation
 

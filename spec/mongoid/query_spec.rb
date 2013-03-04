@@ -1,9 +1,9 @@
 require "spec_helper"
-require "kusuri/mongoid/query"
+require "anaguma/mongoid/query"
 
-MongoidTesting.test(self, Kusuri::Mongoid::Query) do
+MongoidTesting.test(self, Anaguma::Mongoid::Query) do
     def new_query
-        Kusuri::Mongoid::Query.new(MongoidTesting::User.all)
+        Anaguma::Mongoid::Query.new(MongoidTesting::User.all)
     end
 
     let(:query) { new_query }
@@ -111,7 +111,7 @@ MongoidTesting.test(self, Kusuri::Mongoid::Query) do
             first = new_query.where(build: "athletic")
             second = new_query.where(age: { "$gt" => 18 })
             third = new_query.where(gender: "male")
-            result = Kusuri::Mongoid::Query.merge(:and, first,
+            result = Anaguma::Mongoid::Query.merge(:and, first,
                 second, third)
             result.count.should == 1
             result.first.email.should == "noah.roberts@irow.com"
@@ -121,7 +121,7 @@ MongoidTesting.test(self, Kusuri::Mongoid::Query) do
             first = new_query.where(email: "mia.jackson@irow.com")
             second = new_query.where(weight: { "$gt" => 213 })
             third = new_query.where(first_name: "ethan")
-            result = Kusuri::Mongoid::Query.merge(:or, first,
+            result = Anaguma::Mongoid::Query.merge(:or, first,
                 second, third)
             expect(result.count).to eq(4)
             expect(result.map(&:email).sort).to eq(%w(daniel.king@najaf.cc

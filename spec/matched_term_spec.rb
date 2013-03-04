@@ -1,10 +1,10 @@
 require "spec_helper"
-require "kusuri/matched_term"
+require "anaguma/matched_term"
 
-describe Kusuri::MatchedTerm do
+describe Anaguma::MatchedTerm do
     let(:term) { double("Term") }
 
-    let(:matched_term) { Kusuri::MatchedTerm.new(term) }
+    let(:matched_term) { Anaguma::MatchedTerm.new(term) }
 
     context "delegates to a term" do
         %w(operator value quoting not? plaintext).each do |method|

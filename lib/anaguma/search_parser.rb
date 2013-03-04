@@ -2,9 +2,9 @@
 
 require 'treetop'
 require 'polyglot'
-require 'kusuri/search'
+require 'anaguma/search'
 
-module Kusuri
+module Anaguma
     module Search
         class Group < Treetop::Runtime::SyntaxNode
             include Enumerable

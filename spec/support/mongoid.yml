@@ -1,6 +1,6 @@
 mongodb:
     sessions:
         default:
-            database: kusuri_gem_test
+            database: anaguma_gem_test
             hosts:
                 - localhost:27017

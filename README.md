@@ -1,8 +1,8 @@
-## Kusuri: Flexible search for SQL, MongoDB, Solr, and more.
+## Anaguma: Flexible search for SQL, MongoDB, Solr, and more.
 
 *This gem is currently in-development and pre-release.*
 
-Kusuri implements a search parser and compiler for converting user-provided
+Anaguma implements a search parser and compiler for converting user-provided
 searches into queries against a variety of backends, such as ActiveRecord,
 Sequel, MongoDB, Solr and ElasticSearch.
 
@@ -11,6 +11,7 @@ including boolean logic and infix comparison operators.
 
 ## Examples
 
+<!--
 #### Searchable with MongoDB
 
 #### Searchable with ActiveRecord
@@ -24,10 +25,11 @@ including boolean logic and infix comparison operators.
 #### Custom Grammar
 
 #### Custom Backend (Query / Compiler)
+-->
 
 FIXME: Add examples showing how to use this thing. :)
 
-Kusuri was designed so that an application can expose a standard search
+Anaguma was designed so that an application can expose a standard search
 syntax, one that is guaranteed to never return a syntax error to the
 end-user, in the same way that even a Google search that makes no sense will
 try and return at least something of value.

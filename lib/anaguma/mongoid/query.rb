@@ -1,6 +1,6 @@
 require 'mongoid'
 
-module Kusuri
+module Anaguma
     module Mongoid
         class Query
             include Enumerable

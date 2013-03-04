@@ -1,4 +1,4 @@
-module Kusuri
+module Anaguma
     grammar Search
         rule search
             space? group+ <Group>

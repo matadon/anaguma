@@ -1,4 +1,4 @@
-module Kusuri
+module Anaguma
     class Builder
         attr_reader :result
 

@@ -1,6 +1,6 @@
-require 'kusuri/builder'
+require 'anaguma/builder'
 
-module Kusuri
+module Anaguma
     class MockQuery
         def self.merge(predicate, *queries)
             return(queries.first.to_s) if (queries.length < 2)
@@ -9,7 +9,7 @@ module Kusuri
         end
 
         def self.builder(base)
-            Kusuri::Builder.new(base, :condition)
+            Anaguma::Builder.new(base, :condition)
         end
 
         def initialize(condition = nil)

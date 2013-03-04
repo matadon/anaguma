@@ -1,10 +1,10 @@
 require "spec_helper"
-require "kusuri/mongoid/compiler"
+require "anaguma/mongoid/compiler"
 
-MongoidTesting.test(self, Kusuri::Mongoid::Compiler) do
-    let(:base) { Kusuri::Mongoid::Query.new(MongoidTesting::User.all) }
+MongoidTesting.test(self, Anaguma::Mongoid::Compiler) do
+    let(:base) { Anaguma::Mongoid::Query.new(MongoidTesting::User.all) }
 
-    let(:compiler) { Class.new(Kusuri::Mongoid::Compiler) }
+    let(:compiler) { Class.new(Anaguma::Mongoid::Compiler) }
 
     let(:instance) { compiler.new(base) }
 

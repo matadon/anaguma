@@ -1,9 +1,9 @@
 # encoding: utf-8
 require 'spec_helper'
-require 'kusuri/search_parser'
+require 'anaguma/search_parser'
 
-describe Kusuri::Search do
-    let(:parser) { Kusuri::SearchParser.new }
+describe Anaguma::Search do
+    let(:parser) { Anaguma::SearchParser.new }
 
     context ".parse" do
         context "group structure" do
@@ -21,9 +21,9 @@ describe Kusuri::Search do
 
             it "#each" do
                 terms = parser.parse("a b")
-                expect(terms).to be_any { |n| n.is_a?(Kusuri::Search::Term) }
+                expect(terms).to be_any { |n| n.is_a?(Anaguma::Search::Term) }
                 groups = parser.parse("a and b or c")
-                expect(groups).to be_any { |n| n.is_a?(Kusuri::Search::Group) }
+                expect(groups).to be_any { |n| n.is_a?(Anaguma::Search::Group) }
             end
 
             it "#to_s" do
@@ -34,7 +34,7 @@ describe Kusuri::Search do
 
         context "term structure" do
             def first_term(query)
-                parser.parse(query).find { |t| t.is_a?(Kusuri::Search::Term) }
+                parser.parse(query).find { |t| t.is_a?(Anaguma::Search::Term) }
             end
 
             it "#group?" do
