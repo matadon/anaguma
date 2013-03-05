@@ -37,6 +37,10 @@ describe Anaguma::Search do
                 parser.parse(query).find { |t| t.is_a?(Anaguma::Search::Term) }
             end
 
+            it "#quotes" do
+                expect(first_term("a:'A'").quotes).to eq("''")
+            end
+
             it "#group?" do
                 expect(first_term("a")).to_not be_group
             end

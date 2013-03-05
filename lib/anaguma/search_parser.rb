@@ -83,6 +83,12 @@ module Anaguma
                 _value.content.to_s
             end
 
+            def quotes
+                content = _value.content
+                return("") unless content.is_a?(QuotedString)
+                "#{content.left}#{content.right}"
+            end
+
             def quoting
                 content = _value.content
                 return(:none) unless content.is_a?(QuotedString)
