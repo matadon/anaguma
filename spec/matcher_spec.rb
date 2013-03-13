@@ -2,7 +2,7 @@ require 'spec_helper'
 require 'anaguma/matcher'
 
 describe Anaguma::Matcher do
-    let(:context) { double("Compiler") }
+    let(:context) { double("Searcher") }
 
     let(:term) { double("Term", matchers: []) }
 

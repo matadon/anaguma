@@ -5,7 +5,7 @@ require 'anaguma/matched_term'
 require 'anaguma/search_parser'
 
 module Anaguma
-    class Compiler
+    class Searcher
         include Delegation
 
         attr_reader :builder, :term, :matcher
@@ -97,14 +97,15 @@ module Anaguma
         def parse(search)
             compile(parser.parse(search)) || query_class.new(scope)
         end
- 
+
         def compile(root)
             subqueries = root.inject([]) do |memo, node|
                 next(memo.push(compile(node))) if node.group?
                 memo.concat(match_and_apply_rules(node))
             end
-            return(subqueries.first) if (subqueries.length < 2)
-            query_class.merge(root.predicate, *subqueries)
+            head = subqueries.shift
+            return(head) if subqueries.empty?
+            head.merge(root.predicate, *subqueries)
         end
 
         def match_and_apply_rules(node)
@@ -128,7 +129,7 @@ module Anaguma
         def call(name)
             @rules ||= inherited_attribute(:rules).compact.reverse \
                 .inject({}) { |memo, ruleset| memo.merge(ruleset) }
-            rule = @rules[name.to_s] or raise(NotImplementedError, 
+            rule = @rules[name.to_s] or raise(NotImplementedError,
                 "Rule #{name} undefined for #{self.class}")
             send(rule)
         end

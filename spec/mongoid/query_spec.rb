@@ -35,7 +35,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             result
         end
 
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :where
 
         it("equals") { where(age: 50) { |i| i.age == 50 } }
 
@@ -106,13 +106,12 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
         end
     end
 
-    context ".merge" do
+    context "#merge" do
         it ":and" do
             first = new_query.where(build: "athletic")
             second = new_query.where(age: { "$gt" => 18 })
             third = new_query.where(gender: "male")
-            result = Anaguma::Mongoid::Query.merge(:and, first,
-                second, third)
+            result = first.merge(:and, second, third)
             result.count.should == 1
             result.first.email.should == "noah.roberts@irow.com"
         end
@@ -121,8 +120,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             first = new_query.where(email: "mia.jackson@irow.com")
             second = new_query.where(weight: { "$gt" => 213 })
             third = new_query.where(first_name: "ethan")
-            result = Anaguma::Mongoid::Query.merge(:or, first,
-                second, third)
+            result = first.merge(:or, second, third)
             expect(result.count).to eq(4)
             expect(result.map(&:email).sort).to eq(%w(daniel.king@najaf.cc
                 ethan.brown@hotmail.com ethan.phillips@najaf.cc
