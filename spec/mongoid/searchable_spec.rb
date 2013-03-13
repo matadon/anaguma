@@ -2,6 +2,8 @@ require "spec_helper"
 require 'anaguma/mongoid/searchable'
 
 MongoidTesting.test(self, Anaguma::Mongoid::Searchable) do
+    # Subclass the model because we need to test class methods and
+    # class-level operation changes.
     let(:model) { Class.new(MongoidTesting::User) }
 
     it "only works with Mongoid::Document" do

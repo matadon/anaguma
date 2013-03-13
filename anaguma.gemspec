@@ -28,4 +28,7 @@ Gem::Specification.new do |gem|
     gem.add_development_dependency("rspec", ">= 2.12.0")
     gem.add_development_dependency("rspec-core", ">= 2.12.0")
     gem.add_development_dependency("simplecov", ">= 0.7")
+    gem.add_development_dependency("fuubar")
+    gem.add_development_dependency("factory_girl", "~> 4.0")
+    gem.add_development_dependency("activerecord-nulldb-adapter")
 end
