@@ -1,5 +1,5 @@
 require 'anaguma/searchable_proxy'
-require 'anaguma/mongoid/compiler'
+require 'anaguma/mongoid/searcher'
 
 module Anaguma
     module Mongoid
@@ -15,7 +15,7 @@ module Anaguma
             module ClassMethods
                 def searchable
                     @_searchable ||= Anaguma::SearchableProxy.new(self, 
-                        Anaguma::Mongoid::Compiler)
+                        Anaguma::Mongoid::Searcher)
                 end
 
                 def search(query)

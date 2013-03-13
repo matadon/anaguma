@@ -1,6 +1,6 @@
 #
-# FIXME: We need to generate a model-specific subclass of the Compiler to
-# avoid polluting the global Compiler class with model-specific matches, but
+# FIXME: We need to generate a model-specific subclass of the Searcher to
+# avoid polluting the global Searcher class with model-specific matches, but
 # without a name, the backtrace is confusing...
 #
 module Anaguma
@@ -8,19 +8,19 @@ module Anaguma
     end
             
     class SearchableProxy
-        def initialize(model, compiler)
+        def initialize(model, searcher)
             @model = model
-            use(compiler)
+            use(searcher)
         end
 
-        def use(compiler)
-            @compiler = compiler
+        def use(searcher)
+            @searcher = searcher
             self
         end
 
         def method_missing(name, *args, &block)
-            raise(ProxyWithoutTargetError) unless @compiler
-            @compiler.send(name, *args, &block)
+            raise(ProxyWithoutTargetError) unless @searcher
+            @searcher.send(name, *args, &block)
         end
     end
 end

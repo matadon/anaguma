@@ -3,7 +3,7 @@ module Anaguma
         attr_reader :result
 
         def initialize(state, *binds)
-            @state, @binds = state, binds.map(&:to_sym)
+            @state, @binds = state, binds.flatten.map(&:to_sym)
         end
 
         def result

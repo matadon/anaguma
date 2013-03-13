@@ -14,7 +14,7 @@ module Anaguma
             head:term tail:(and? (and/or)* term !or)* <Group>
         end
 
-        rule term 
+        rule term
             prefix:not? _field:field? _value:value <Term>
             /
             prefix:not? _field:field

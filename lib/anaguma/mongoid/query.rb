@@ -7,27 +7,6 @@ module Anaguma
 
             attr_reader :_criteria
 
-            def self.merge(boolean, *queries)
-                new(merge_criteria(boolean, queries.map(&:_criteria)))
-            end
-
-            private
-
-            def self.merge_criteria(boolean, criteria)
-                return(criteria.first) if (criteria.length == 1)
-                selectors = []
-                merged_criteria = criteria.inject(nil) do |memo, item|
-                     selectors.push(item.selector) unless item.selector.empty?
-                     empty_criteria = item.clone
-                     empty_criteria.selector = Origin::Selector.new
-                     memo ? memo.merge(empty_criteria) : empty_criteria
-                end
-                return(merged_criteria) if selectors.empty?
-                merged_criteria.where("$#{boolean}" => selectors)
-            end
-
-            public
-
             def initialize(scope)
                 @_criteria = scope unless scope.is_a?(self.class) 
                 @_criteria ||= scope._criteria
@@ -95,7 +74,21 @@ module Anaguma
                 instances.each(&block)
             end
 
+            def merge(boolean, *queries)
+                self.class.new(merge_criteria(boolean, 
+                    queries.flatten.unshift(self).map(&:_criteria)))
+            end
+
             private
+
+            def merge_criteria(boolean, criteria)
+                return(criteria.first.clone) if (criteria.length == 1)
+                selectors = criteria.map(&:selector).reject(&:empty?)
+                merged_criteria = criteria.first.clone
+                merged_criteria.selector = Origin::Selector.new
+                return(merged_criteria) if selectors.empty?
+                merged_criteria.where("$#{boolean}" => selectors)
+            end
 
             def build_condition(field, operator, value)
                 case(operator)
