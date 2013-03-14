@@ -83,13 +83,9 @@ module Anaguma
 
             def merge_criteria(boolean, criteria)
                 return(criteria.first.clone) if (criteria.length == 1)
-                selectors = []
-                merged_criteria = criteria.inject(nil) do |memo, item|
-                     selectors.push(item.selector) unless item.selector.empty?
-                     empty_criteria = item.clone
-                     empty_criteria.selector = Origin::Selector.new
-                     memo ? memo.merge(empty_criteria) : empty_criteria
-                end
+                selectors = criteria.map(&:selector).reject(&:empty?)
+                merged_criteria = criteria.first.clone
+                merged_criteria.selector = Origin::Selector.new
                 return(merged_criteria) if selectors.empty?
                 merged_criteria.where("$#{boolean}" => selectors)
             end
