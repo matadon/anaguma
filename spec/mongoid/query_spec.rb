@@ -35,7 +35,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             result
         end
 
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :where
 
         it("equals") { where(age: 50) { |i| i.age == 50 } }
 

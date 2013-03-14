@@ -1,6 +1,7 @@
 require "spec_helper"
 require "active_record"
 require "anaguma/active_record/query"
+require 'nulldb'
 
 # Query.merge(query1, query2, ..., queryN) => Query
 #
@@ -23,7 +24,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#select" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :select
 
         it "default" do
             expect(query.clause(:select)).to be_empty
@@ -45,7 +46,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#from" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :from
 
         it "default" do
             expect(query.clause(:from)).to be_nil
@@ -62,7 +63,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#joins" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :from
 
         it "default" do
             expect(query.clause(:joins)).to be_empty
@@ -89,7 +90,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#includes" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :includes
 
         it "default" do
             expect(query.clause(:includes)).to be_empty
@@ -116,7 +117,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#where" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :where
 
         it "default" do
             expect(query.clause(:where)).to be_empty
@@ -147,7 +148,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#having" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :having
 
         it "default" do
             expect(query.clause(:having)).to be_empty
@@ -178,7 +179,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#group" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :group
 
         it "default" do
             expect(query.clause(:group)).to be_empty
@@ -205,7 +206,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#order" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :order
 
         it "default" do
             expect(query.clause(:order)).to be_empty
@@ -232,7 +233,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#reorder" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :reorder
 
         it "default" do
             expect(query.clause(:order)).to be_empty
@@ -259,7 +260,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#limit" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :limit
 
         it "default" do
             expect(query.clause(:limit)).to be_nil
@@ -280,7 +281,7 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#offset" do
-        it_behaves_like "a monad"
+        it_behaves_like "a monad", on: :offset
 
         it "default" do
             expect(query.clause(:offset)).to be_nil
@@ -405,10 +406,10 @@ describe Anaguma::ActiveRecord::Query do
             end
 
             it "preserves bound variables" do
-                first = query.where(one: 1)
-                second = query.where(two: 2)
-                expect(first.merge(:or, second).clause(:where)).to \
-                    eq(["(test.one = 1) OR (test.two = 2)"])
+                first = query.where('one = ?', 1)
+                second = query.where('two = ?', 2)
+                first.merge(:or, second).clause(:where).should == \
+                    ["(one = 1) OR (two = 2)"]
             end
         end
 
@@ -428,11 +429,11 @@ describe Anaguma::ActiveRecord::Query do
             end
 
             it "preserves bound variables" do
-                first = query.having(one: 1)
-                second = query.having(two: 2)
-                expect(first.merge(:or, second).clause(:having)).to \
-                    eq(["(test.one = 1) OR (test.two = 2)"])
-            end
+                first = query.having('one = ?', 1)
+                second = query.having('two = ?', 2)
+                first.merge(:or, second).clause(:having).should == \
+                    ["(one = 1) OR (two = 2)"]
+           end
         end
 
         it "merges zero additional queries" do
