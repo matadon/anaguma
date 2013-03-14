@@ -2,12 +2,6 @@ require 'anaguma/builder'
 
 module Anaguma
     class MockQuery
-        def self.merge(predicate, *queries)
-            return(queries.first.to_s) if (queries.length < 2)
-            merged = queries.map(&:to_s).unshift(predicate).join(" ")
-            new("(#{merged})")
-        end
-
         def self.builder(base)
             Anaguma::Builder.new(base, :condition)
         end
@@ -27,6 +21,13 @@ module Anaguma
 
         def ==(other)
             to_s == other.to_s
+        end
+
+        def merge(predicate, *queries)
+            queries = queries.flatten.unshift(self)
+            return(queries.first.to_s) if (queries.length < 2)
+            merged = queries.map(&:to_s).unshift(predicate).join(" ")
+            self.class.new("(#{merged})")
         end
     end
 end

@@ -103,8 +103,9 @@ module Anaguma
                 next(memo.push(compile(node))) if node.group?
                 memo.concat(match_and_apply_rules(node))
             end
-            return(subqueries.first) if (subqueries.length < 2)
-            query_class.merge(root.predicate, *subqueries)
+            head = subqueries.shift
+            return(head) if subqueries.empty?
+            head.merge(root.predicate, *subqueries)
         end
 
         def match_and_apply_rules(node)
