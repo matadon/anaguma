@@ -97,7 +97,7 @@ module Anaguma
         def parse(search)
             compile(parser.parse(search)) || query_class.new(scope)
         end
- 
+
         def compile(root)
             subqueries = root.inject([]) do |memo, node|
                 next(memo.push(compile(node))) if node.group?
@@ -129,7 +129,7 @@ module Anaguma
         def call(name)
             @rules ||= inherited_attribute(:rules).compact.reverse \
                 .inject({}) { |memo, ruleset| memo.merge(ruleset) }
-            rule = @rules[name.to_s] or raise(NotImplementedError, 
+            rule = @rules[name.to_s] or raise(NotImplementedError,
                 "Rule #{name} undefined for #{self.class}")
             send(rule)
         end

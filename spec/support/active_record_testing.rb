@@ -3,10 +3,26 @@ require 'anaguma/active_record/searcher'
 
 module ActiveRecordTesting
   class BadgerSearcher < Anaguma::ActiveRecord::Searcher
+
+    match :called, field: :called
+    match :smartness, field: :smartness
+
     match :generic
-    rule :generic do
-      compare(term)
+
+    rule :smartness do
+      compare(term, all: %w(iq eq))
     end
+
+    rule :called do
+      compare(term, any: %w(name nickname))
+    end
+
+    rule :generic do
+      next if term.matched?
+      next(compare(term)) if term.field
+      compare(term, any: %w(name nickname age iq eq))
+    end
+
   end
 
   class Badger < ActiveRecord::Base
@@ -31,7 +47,10 @@ module ActiveRecordTesting
         def up
             clean_and_create_table('badgers') do |t|
                 t.string :name
+                t.string :nickname
                 t.integer :age
+                t.integer :iq
+                t.integer :eq
             end
 
             clean_and_create_table('mushrooms') do |t|

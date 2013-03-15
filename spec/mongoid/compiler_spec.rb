@@ -32,7 +32,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Compiler) do
         compiler.rule(:generic) do
             next if term.matched?
             next(compare(term)) if term.field
-            compare(term, any: %w(first_name last_name drivers_license 
+            compare(term, any: %w(first_name last_name drivers_license
                 build gender age))
         end
     end
@@ -60,48 +60,48 @@ MongoidTesting.test(self, Anaguma::Mongoid::Compiler) do
     context "simple queries" do
         context "string" do
            search("name: emma") { |user| user.first_name == "emma" }
- 
+
            search("not name: emma") { |user| user.first_name != "emma" }
- 
-           search("name > emma") { |user| 
+
+           search("name > emma") { |user|
                (user.first_name > "emma")  or (user.last_name > "emma") }
- 
+
            search("name < emma") { |user|
                (user.first_name < "emma") or (user.last_name < "emma") }
- 
+
            search("name >= emma") { |user|
                (user.first_name >= "emma") or (user.last_name >= "emma") }
- 
+
            search("name <= emma") { |user|
                (user.first_name <= "emma") or (user.last_name <= "emma") }
- 
+
            search("name: emma and name: liam")
- 
+
            search("name: emma or name: liam") { |user|
                 %w(emma liam).include?(user.first_name) }
- 
+
            search("name ~ e*") { |user|
                (user.first_name =~ /^e/i) or (user.last_name =~ /^e/i) }
         end
 
         context "number" do
            search("age: 29") { |user| user.age == 29 }
- 
+
            search("not age: 29") { |user| user.age != 29 }
- 
+
            search("age > 29") { |user| user.age > 29 }
- 
+
            search("age < 29") { |user| user.age < 29 }
- 
+
            search("age >= 29") { |user| user.age >= 29 }
- 
+
            search("age <= 29") { |user| user.age <= 29 }
- 
+
            search("age < 29 and age > 40")
- 
+
            search("age < 29 or age > 40") { |user|
                 ((user.age < 29) or (user.age > 40)) }
- 
+
            search("age ~ 29") { |user|
                 ((user.age > 26) and (user.age < 32)) }
         end
@@ -131,13 +131,13 @@ MongoidTesting.test(self, Anaguma::Mongoid::Compiler) do
 
         search("rental: Honda rental: Ford") do |user|
             user.rentals.any? { |r| r.vehicle.make == 'Honda'} \
-                and user.rentals.any? { |r| r.vehicle.make == 'Ford'} 
+                and user.rentals.any? { |r| r.vehicle.make == 'Ford'}
         end
     end
 
     context "#autoconfigure" do
         # match on a list of fields
-        # if no field, match on 
+        # if no field, match on
         # user will then add their own rules afterwards
         # permit and filter will need to go above everything else.
     end
