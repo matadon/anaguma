@@ -1,5 +1,4 @@
 require "spec_helper"
-require "active_record"
 require "anaguma/active_record/query"
 require 'nulldb'
 
@@ -43,6 +42,141 @@ describe Anaguma::ActiveRecord::Query do
             updated = query.select(%w(one two))
             expect(updated.clause(:select)).to eq(%w(one two))
         end
+    end
+
+    describe "#compare" do
+      def clause(name, operator, value)
+        name = Regexp.quote name.to_s
+        operator = Regexp.quote operator.to_s
+        value = Regexp.quote value.to_s
+        quoting = /[\s\`\'\"]*/
+        /#{quoting}#{name}#{quoting}#{operator}#{quoting}#{value}#{quoting}/
+      end
+
+      it_behaves_like "a monad", on: :compare
+
+      it 'eq' do
+        term = double(field: 'name', operator:'eq', value:'billy')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('name','=','billy'))
+      end
+
+      it 'ne' do
+        term = double(field: 'name', operator:'ne', value:'billy')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('name','!=','billy'))
+      end
+
+      it 'lt' do
+        term = double(field: 'age', operator:'lt', value:'1')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('age','<',1))
+      end
+
+      it 'gt' do
+        term = double(field: 'age', operator:'gt', value:'1')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('age','>',1))
+      end
+
+      it 'lte' do
+        term = double(field: 'age', operator: 'lte', value: '1')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('age', '<=', 1))
+      end
+
+      it 'gte' do
+        term = double(field: 'age', operator: 'gte', value: '1')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('age', '>=', 1))
+      end
+
+      it 'like same as eq' do
+        term = double(field: 'name', operator: 'like', value: 'billy')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+      end
+
+      it 'notlike same as ne' do
+        term = double(field: 'name', operator: 'notlike', value: 'billy')
+        where_clauses = query.compare(term).clause(:where)
+        expect(where_clauses.count).to eq(1)
+        expect(where_clauses.first).to match(clause('name', '!=', 'billy'))
+      end
+
+      context 'options' do
+
+        it 'operator override' do
+          term = double(field: 'name', operator: 'gte', value: 'billy')
+          where_clauses = query.compare(term, operator: 'eq').clause(:where)
+          expect(where_clauses.count).to eq(1)
+          expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+        end
+
+        it 'value override' do
+          term = double(field: 'name', operator: 'eq', value: 'billy')
+          where_clauses = query.compare(term, value: 'johnny').clause(:where)
+          expect(where_clauses.count).to eq(1)
+          expect(where_clauses.first).to match(clause('name', '=', 'johnny'))
+        end
+
+        it 'field override' do
+          term = double(field: 'moo', operator: 'eq', value: 'billy')
+          where_clauses = query.compare(term, field: 'name').clause(:where)
+          expect(where_clauses.count).to eq(1)
+          expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+        end
+
+        it 'any' do
+          term = double(field: 'moniker', operator: 'eq', value: 'billy',
+            not?: false)
+          where_clauses = query.compare(term, any: %w(name surname)) \
+            .clause(:where)
+          left = clause('name', '=', 'billy')
+          right = clause('surname', '=', 'billy')
+          expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
+        end
+
+        it 'all' do
+          term = double(field: 'moniker', operator: 'eq', value: 'billy',
+            not?: false)
+          where_clauses = query.compare(term, all:%w(name surname)) \
+            .clause(:where)
+          left = clause('name', '=', 'billy')
+          right = clause('surname', '=', 'billy')
+          expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
+        end
+
+        it 'not any' do
+          term = double(field: 'moniker', operator: 'ne', value: 'billy',
+            not?: true)
+          where_clauses = query.compare(term, any: %w(name surname)) \
+            .clause(:where)
+          left = clause('name', '!=', 'billy')
+          right = clause('surname', '!=', 'billy')
+          expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
+        end
+
+        it 'not all' do
+          term = double(field: 'moniker', operator: 'ne', value: 'billy',
+            not?: true)
+          where_clauses = query.compare(term, all: %w(name surname)) \
+            .clause(:where)
+          left = clause('name', '!=', 'billy')
+          right = clause('surname', '!=', 'billy')
+          expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
+        end
+      end
+
+
+
     end
 
     describe "#from" do
@@ -310,30 +444,6 @@ describe Anaguma::ActiveRecord::Query do
             match(/^select\b.*\.\*.*\bfrom\b.*\btest\b/i)
     end
 
-    # context ".merge" do
-    #     it ":and" do
-    #         first = new_query.where(build: "athletic")
-    #         second = new_query.where(age: { "$gt" => 18 })
-    #         third = new_query.where(gender: "male")
-    #         result = Anaguma::Mongoid::Query.merge(:and, first,
-    #             second, third)
-    #         result.count.should == 1
-    #         result.first.email.should == "noah.roberts@irow.com"
-    #     end
-
-    #     it ":or" do
-    #         first = new_query.where(email: "mia.jackson@irow.com")
-    #         second = new_query.where(weight: { "$gt" => 213 })
-    #         third = new_query.where(first_name: "ethan")
-    #         result = Anaguma::Mongoid::Query.merge(:or, first,
-    #             second, third)
-    #         expect(result.count).to eq(4)
-    #         expect(result.map(&:email).sort).to eq(%w(daniel.king@najaf.cc
-    #             ethan.brown@hotmail.com ethan.phillips@najaf.cc
-    #             mia.jackson@irow.com))
-    #     end
-    # end
-
     describe "#merge" do
         context "predicate-independent clauses" do
             it "select appends and removes duplicates" do
@@ -450,54 +560,18 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     context "returning results from the database" do
+        Badger = ActiveRecordTesting::Badger
         before(:all) do
-            ActiveRecord::Base.establish_connection(adapter: 'sqlite3',
-                database: "#{File.dirname(__FILE__)}/../../tmp/test.sqlite3")
+          ActiveRecordTesting.setup
 
-            migration = Class.new(ActiveRecord::Migration) do
-                def clean_and_create_table(name, &block)
-                    return(execute("delete from #{name}")) \
-                        if table_exists?(name)
-                    create_table(name, &block)
-                end
+          billy = Badger.create!(name: 'billy')
+          billy.mushrooms.create!(toxicity: 0.01)
+          billy.mushrooms.create!(toxicity: 1000)
 
-                def up
-                    clean_and_create_table('badgers') do |t|
-                        t.string :name
-                    end
+          bob = Badger.create!(name: 'bob')
+          bob.mushrooms.create!(toxicity: 100)
 
-                    clean_and_create_table('mushrooms') do |t|
-                        t.float :toxicity
-                        t.integer :badger_id
-                    end
-                end
-
-                def down
-                    drop_table('badgers') if table_exists?('badgers')
-                    drop_table('mushrooms') if table_exists?('mushrooms')
-                end
-            end
-
-            ActiveRecord::Migration.verbose = false
-            migration.migrate(:up)
-            ActiveRecord::Migration.verbose = true
-
-            class Badger < ActiveRecord::Base
-                has_many :mushrooms
-            end
-
-            class Mushroom < ActiveRecord::Base
-                belongs_to :badger
-            end
-
-            billy = Badger.create!(name: 'billy')
-            billy.mushrooms.create!(toxicity: 0.01)
-            billy.mushrooms.create!(toxicity: 1000)
-
-            bob = Badger.create!(name: 'bob')
-            bob.mushrooms.create!(toxicity: 100)
-
-            Badger.create!(name: 'bubba')
+          Badger.create!(name: 'bubba')
         end
 
         let(:query) { Anaguma::ActiveRecord::Query.new(Badger) }

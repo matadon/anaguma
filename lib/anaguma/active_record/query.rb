@@ -68,7 +68,47 @@ module Anaguma
             def offset(count = nil)
                 chain(@relation.offset(count))
             end
- 
+
+            OPERATORS = {
+              lt: '<',
+              gt: '>',
+              lte: '<=',
+              gte: '>=',
+              ne: '!=',
+              notlike: '!=',
+              eq:'=',
+              like:'='
+            }
+
+            def compare(term = nil, options = {})
+              return chain(@relation) unless term
+              unquoted_field = options[:field] || term.field
+              field = @relation.connection.quote_column_name(unquoted_field)
+              value = options[:value] || term.value
+              operator = (options[:operator] || term.operator)
+              operator or raise(ArgumentError,
+                "Cannot match term with operator #{term.operator}")
+
+              return where(where_term_for(field, operator.to_sym, value)) \
+                unless options[:any] || options[:all]
+
+              builder = lambda { |f| where_term_for(f, operator.to_sym, value) }
+              result = self
+              if options[:any]
+                predicate = term.not? ? :and : :or
+                clauses = options[:any].map(&builder)
+                combined = combine_and_wrap(predicate, clauses)
+                result = result.where(combined)
+              end
+              if options[:all]
+                predicate = term.not? ? :or : :and
+                clauses = options[:all].map(&builder)
+                combined = combine_and_wrap(predicate, clauses)
+                result = result.where(combined)
+              end
+              return result
+            end
+
             def to_sql
                 @relation.to_sql
             end
@@ -109,7 +149,7 @@ module Anaguma
                 return(false) unless other.respond_to?(:to_sql)
                 to_sql == other.to_sql
             end
-            
+
             def instances
                 @relation.all
             end
@@ -191,6 +231,13 @@ module Anaguma
                 return([ items.first ]) if (items.length == 1)
                 [ items.map { |i| "(#{i})" }.join(separator) ]
             end
+
+            def where_term_for(field, operator, value)
+              clause_before_condition = clause(:where)
+              conditional = where("#{field} #{OPERATORS[operator]} ?", value)
+              (conditional.clause(:where) - clause_before_condition).first
+            end
+
         end
     end
 end
