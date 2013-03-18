@@ -51,6 +51,7 @@ module ActiveRecordTesting
                 t.integer :age
                 t.integer :iq
                 t.integer :eq
+                t.timestamps
             end
 
             clean_and_create_table('mushrooms') do |t|

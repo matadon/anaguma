@@ -155,7 +155,14 @@ module Anaguma
             end
 
             def tuples
-                @relation.connection.select_all(@relation.to_sql)
+                connection = @relation.connection
+                connection.select_all(@relation.to_sql).map do |tuple|
+                    tuple.each_pair do |key, value|
+                        next unless (column = @relation.columns_hash[key])
+                        tuple[key] = column.type_cast(value)
+                    end
+                    tuple
+                end
             end
 
             def return_results_as(format)

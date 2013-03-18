@@ -112,7 +112,6 @@ describe Anaguma::ActiveRecord::Query do
       end
 
       context 'options' do
-
         it 'operator override' do
           term = double(field: 'name', operator: 'gte', value: 'billy')
           where_clauses = query.compare(term, operator: 'eq').clause(:where)
@@ -174,9 +173,6 @@ describe Anaguma::ActiveRecord::Query do
           expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
         end
       end
-
-
-
     end
 
     describe "#from" do
@@ -655,6 +651,11 @@ describe Anaguma::ActiveRecord::Query do
                 joined = merged.joins(:mushrooms).select('*')
                 joined.tuples.should be_all { |tuple|
                     tuple['toxicity'].is_a?(Float) }
+            end
+
+            it "casts types" do
+                result = query.where(name: 'bob')
+                expect(result.tuples.first['created_at']).to be_a(Time)
             end
         end
 
