@@ -82,8 +82,7 @@ module Anaguma
 
             def compare(term = nil, options = {})
               return chain(@relation) unless term
-              unquoted_field = options[:field] || term.field
-              field = @relation.connection.quote_column_name(unquoted_field)
+              field = options[:field] || term.field
               value = options[:value] || term.value
               operator = (options[:operator] || term.operator)
               operator or raise(ArgumentError,
@@ -241,7 +240,8 @@ module Anaguma
 
             def where_term_for(field, operator, value)
               clause_before_condition = clause(:where)
-              conditional = where("#{field} #{OPERATORS[operator]} ?", value)
+              quoted_field = @relation.connection.quote_column_name(field)
+              conditional = where("#{quoted_field} #{OPERATORS[operator]} ?", value)
               (conditional.clause(:where) - clause_before_condition).first
             end
 
