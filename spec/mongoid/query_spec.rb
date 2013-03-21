@@ -13,41 +13,27 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
     context "#where" do
         def where(*conditions, &block)
             result = query.where(*conditions)
-
             expect(result.tuples).to be_a(Array)
             expect(result.tuples).to be_all { |r|
                 r.instance_of?(Moped::BSON::Document) }
-
-            expect(result.instances).to be_a(Array)
-            expect(result.instances).to be_all { |r|
-                r.instance_of?(MongoidTesting::User) }
-
-            expect(result.tuples.count).to eq(result.instances.count)
-
-            expect(result.tuples.each_with_index).to be_all do |tuple, index|
-                instance = result.instances[index]
-                tuples.all? { |k, v| instance.send(k).should == v }
-            end
-
-            expect(result.instances).to be_all(&block) if block_given?
-            expect(result).to_not be_empty if block_given?
-
+            expect(result.tuples.count).to eq(result.count)
+            expect(result.tuples).to be_all(&block) if block_given?
             result
         end
 
         it_behaves_like "a monad", on: :where
 
-        it("equals") { where(age: 50) { |i| i.age == 50 } }
+        it("equals") { where(age: 50) { |i| i['age'] == 50 } }
 
-        it("greater") { where(age: { "$gt" => 50 }) { |i| i.age > 50 } }
+        it("greater") { where(age: { "$gt" => 50 }) { |i| i['age'] > 50 } }
 
-        it("less") { where(age: { "$lt" => 50 }) { |i| i.age < 50 } }
+        it("less") { where(age: { "$lt" => 50 }) { |i| i['age'] < 50 } }
 
         it("greater than or equal to") {
-            where(age: { "$gte" => 50 }) { |i| i.age >= 50 } }
+            where(age: { "$gte" => 50 }) { |i| i['age'] >= 50 } }
 
         it("less than or equal to") {
-            where(age: { "$lte" => 50 }) { |i| i.age <= 50 } }
+            where(age: { "$lte" => 50 }) { |i| i['age'] <= 50 } }
     end
 
     context "#aggregate" do
@@ -72,7 +58,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             term = double(field: 'first_name', value: 'wyatt', operator: 'eq')
             result = query.compare(term)
             expect(result.count).to eq(1)
-            expect(result.first.first_name).to eq('wyatt')
+            expect(result.first['first_name']).to eq('wyatt')
         end
 
         it "any" do
@@ -80,8 +66,8 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
                 not?: false)
             result = query.compare(term, any: %w(first_name last_name))
             expect(result.count).to eq(2)
-            expect(result).to be_any { |r| r.first_name == 'wyatt' }
-            expect(result).to be_any { |r| r.last_name == 'young' }
+            expect(result).to be_any { |r| r['first_name'] == 'wyatt' }
+            expect(result).to be_any { |r| r['last_name'] == 'young' }
         end
 
         it "not any" do
@@ -113,7 +99,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             third = new_query.where(gender: "male")
             result = first.merge(:and, second, third)
             result.count.should == 1
-            result.first.email.should == "noah.roberts@irow.com"
+            result.first['email'].should == "noah.roberts@irow.com"
         end
 
         it ":or" do
@@ -121,8 +107,9 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             second = new_query.where(weight: { "$gt" => 213 })
             third = new_query.where(first_name: "ethan")
             result = first.merge(:or, second, third)
+            emails = result.map { |t| t['email'] }
             expect(result.count).to eq(4)
-            expect(result.map(&:email).sort).to eq(%w(daniel.king@najaf.cc
+            expect(emails.sort).to eq(%w(daniel.king@najaf.cc
                 ethan.brown@hotmail.com ethan.phillips@najaf.cc
                 mia.jackson@irow.com))
         end

@@ -55,11 +55,6 @@ module Anaguma
                 skip(count)
             end
 
-            def instances(reload = false)
-                @_instances = nil if reload
-                @_instances ||= @_criteria.to_a
-            end
-
             def tuples(reload = false)
                 @_tuples = nil if reload
                 @_tuples ||= @_criteria.query.to_a
@@ -75,7 +70,7 @@ module Anaguma
             end
 
             def each(&block)
-                instances.each(&block)
+                tuples.each(&block)
             end
 
             def merge(boolean, *queries)

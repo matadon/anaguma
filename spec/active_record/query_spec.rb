@@ -2,10 +2,6 @@ require "spec_helper"
 require "anaguma/active_record/query"
 require 'nulldb'
 
-# Query.merge(query1, query2, ..., queryN) => Query
-#
-# IDEA: Query.monadic_builder_methods => [ :limit, :where, :offset, ... ]
-
 describe Anaguma::ActiveRecord::Query do
     before(:all) do
         ActiveRecord::Base.establish_connection(adapter: :nulldb)
@@ -572,47 +568,6 @@ describe Anaguma::ActiveRecord::Query do
 
         let(:query) { Anaguma::ActiveRecord::Query.new(Badger) }
 
-        describe "#instances" do
-            it "returns only models" do
-                query.instances.should be_all { |i| i.is_a?(Badger) }
-            end
-
-            it "returns selected models" do
-                selected = query.where(name: 'bob')
-                instances = selected.instances
-                instances.count.should == 1
-                instances.first.should be_a(Badger)
-                instances.first.name.should == 'bob'
-            end
-
-            it "returns models after merging" do
-                first = query.where(name: 'bob')
-                second = query.where(name: 'billy')
-                merged = first.merge(:or, second)
-                instances = merged.instances
-                instances.count.should == 2
-                instances.should be_all { |i| i.is_a?(Badger) }
-                instances.map(&:name).sort.should == %w(billy bob)
-            end
-
-            it "returns nothing after merging" do
-                first = query.where(name: 'bob')
-                second = query.where(name: 'billy')
-                merged = first.merge(:and, second)
-                instances = merged.instances
-                instances.count.should == 0
-            end
-
-            it "eagerly loads" do
-                first = query.where(name: 'bob')
-                second = query.where(name: 'billy')
-                merged = first.merge(:or, second)
-                eagerly_loaded = merged.joins(:mushrooms).includes(:mushrooms)
-                eagerly_loaded.instances.should be_all { |instance|
-                    instance.mushrooms.loaded? }
-            end
-        end
-
         describe "#tuples" do
             it "returns only tuples" do
                 query.tuples.should be_all { |i| i.is_a?(Hash) }
@@ -659,20 +614,12 @@ describe Anaguma::ActiveRecord::Query do
             end
         end
 
-        describe "#each via #all" do
-            it "tuples" do
-                expect(query.return_results_as(:tuples)).to \
-                    be_all { |r| r.is_a?(Hash) }
-            end
-
-            it "instances" do
-                expect(query.return_results_as(:instances)).to \
-                    be_all { |r| r.is_a?(Badger) }
-            end
+        it "#each iterates over #tuples" do
+            expect(query).to be_all { |r| r.is_a?(Hash) }
         end
 
         it "#to_a" do
-            query.to_a.should == query.instances
+            query.to_a.should == query.tuples
         end
 
         it "#count" do
@@ -687,26 +634,23 @@ describe Anaguma::ActiveRecord::Query do
         describe ".new" do
             it "from model" do
                 query = Anaguma::ActiveRecord::Query.new(Badger)
-                instances = query.instances
-                instances.count.should == 3
-                instances.should be_all { |i| i.is_a?(Badger) }
+                query.count.should == 3
+                query.should be_all { |t| t['name'] }
             end
 
             it "from relation" do
                 relation = Badger.where(name: 'bob')
                 query = Anaguma::ActiveRecord::Query.new(relation)
-                instances = query.instances
-                instances.count.should == 1
-                instances.should be_all { |i| i.is_a?(Badger) }
+                query.count.should == 1
+                query.should be_all { |t| t['name'] == 'bob' }
             end
 
             it "from query" do
                 relation = Badger.where(name: 'bob')
                 subquery = Anaguma::ActiveRecord::Query.new(relation)
                 query = Anaguma::ActiveRecord::Query.new(subquery)
-                instances = query.instances
-                instances.count.should == 1
-                instances.should be_all { |i| i.is_a?(Badger) }
+                query.count.should == 1
+                query.should be_all { |t| t['name'] == 'bob' }
             end
         end
     end

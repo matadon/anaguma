@@ -6,23 +6,20 @@ module Anaguma
         class Query
             include Enumerable
 
-            attr_reader :relation, :_format
+            attr_reader :relation
 
             def self.monadic_query_methods
                 %w(select limit offset group having where compare)
             end
 
-            def initialize(scope, format = nil)
+            def initialize(scope)
                 if(scope.is_a?(self.class))
                     @relation = scope.relation
-                    @_format = format || scope._format
                 elsif(scope.is_a?(::ActiveRecord::Relation))
                     @relation = scope
-                    @_format = format || :instances
                 else
                     @relation = ::ActiveRecord::Relation.new(scope,
                         scope.arel_table)
-                    @_format = format || :instances
                 end
             end
 
@@ -146,7 +143,30 @@ module Anaguma
 
                 clauses[:where] = combine_and_wrap(predicate, clauses[:where])
                 clauses[:having] = combine_and_wrap(predicate, clauses[:having])
-                chain(build_newrelation_from_clauses(clauses))
+                chain(build_new_relation_from_clauses(clauses))
+            end
+
+            def tuples(reload = false)
+                @_tuples = nil if reload
+                @_tuples ||= connection.select_all(to_sql).map do |tuple|
+                    tuple.each do |key, value|
+                        next unless (column = @relation.columns_hash[key])
+                        tuple[key] = column.type_cast(value)
+                    end
+                end
+            end
+
+            def each(&block)
+                tuples.each(&block)
+            end
+
+            def count(reload = false)
+                @_count = nil if reload
+                @_count ||= @relation.count
+            end
+
+            def empty?
+                count == 0
             end
 
             def ==(other)
@@ -154,45 +174,18 @@ module Anaguma
                 to_sql == other.to_sql
             end
 
-            def instances
-                @relation.all
-            end
-
-            def tuples
-                connection = @relation.connection
-                connection.select_all(@relation.to_sql).map do |tuple|
-                    tuple.each_pair do |key, value|
-                        next unless (column = @relation.columns_hash[key])
-                        tuple[key] = column.type_cast(value)
-                    end
-                    tuple
-                end
-            end
-
-            def return_results_as(format)
-                format = format.to_sym
-                raise(ArgumentError, "Format must be :instances or :tuples") \
-                    unless [:instances, :tuples].include?(format)
-                chain(@relation, format)
-            end
-
-            def each(&block)
-                return(@relation.each(&block)) if (@_format == :instances)
-                tuples.each(&block)
-            end
-
-            def count
-                @relation.count
-            end
-
-            def empty?
-                @relation.empty?
+            def to_sql
+                @relation.to_sql
             end
 
             private
 
-            def chain(relation, format = nil)
-                self.class.new(relation, format || @_format)
+            def connection
+                @relation.connection
+            end
+
+            def chain(relation)
+                self.class.new(relation)
             end
 
             def merge_unpredicated_clauses(result, query)
@@ -207,7 +200,7 @@ module Anaguma
                 result
             end
 
-            def build_newrelation_from_clauses(clauses)
+            def build_new_relation_from_clauses(clauses)
                 relation = ::ActiveRecord::Relation.new(@relation.klass,
                     @relation.table)
                 builder = Builder.new(relation, %w(select from joins includes
