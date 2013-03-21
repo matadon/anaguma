@@ -8,6 +8,10 @@ module Anaguma
 
             attr_reader :relation, :_format
 
+            def self.monadic_query_methods
+                %w(select limit offset group having where compare)
+            end
+
             def initialize(scope, format = nil)
                 if(scope.is_a?(self.class))
                     @relation = scope.relation

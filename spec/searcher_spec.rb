@@ -3,10 +3,7 @@ require 'anaguma/searcher'
 
 describe Anaguma::Searcher do
     let(:searcher) do
-        Class.new(Anaguma::Searcher) do
-            query_class(Anaguma::MockQuery) 
-            query_methods(:condition)
-        end
+        Class.new(Anaguma::Searcher) { query_class(Anaguma::MockQuery) }
     end
 
     let(:query) { String.new }
@@ -46,7 +43,7 @@ describe Anaguma::Searcher do
     end
 
     context ".query_class" do
-        let(:searcher) { Class.new(Anaguma::Searcher).query_methods(:foo) }
+        let(:searcher) { Class.new(Anaguma::Searcher) }
 
         it "no default value" do
             expect(-> { instance.query_class }) \
@@ -73,36 +70,6 @@ describe Anaguma::Searcher do
         end
     end
 
-    context ".query_methods" do
-        let(:searcher) { Class.new(Anaguma::Searcher) \
-            .query_class(Anaguma::MockQuery) }
-
-        it "no default value" do
-            expect(-> { instance.query_methods }).to raise_error(RuntimeError)
-        end
-
-        it "configurable" do
-            query_methods = %w(foo bar)
-            searcher.query_methods(query_methods)
-            expect(instance.query_methods).to eq(query_methods)
-        end
-
-        it "inherits" do
-            query_methods = %w(foo bar)
-            searcher.query_methods(query_methods)
-            subclass = Class.new(searcher)
-            subclass.new(query).query_methods.should eq(query_methods)
-        end
-
-        it "overrides inherited" do
-            searcher.query_methods(%w(foo bar))
-            subclass = Class.new(searcher)
-            query_methods = %w(foo bar)
-            subclass.query_methods(query_methods)
-            subclass.new(query).query_methods.should eq(query_methods)
-        end
-    end
-
     context "#scope" do
         it "configured by #new" do
             instance = searcher.new("foo")
@@ -110,7 +77,6 @@ describe Anaguma::Searcher do
         end
 
         it "modifiable" do
-            searcher.query_methods(:condition)
             instance.builder.should_not be_nil
             instance.builder.result.should == ""
             instance.condition("foo").result.should == "foo"

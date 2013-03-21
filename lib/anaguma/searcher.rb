@@ -17,13 +17,7 @@ module Anaguma
 
         def self.query_class(query_class)
             @query_class = query_class
-            self
-        end
-
-        def self.query_methods(*query_methods)
-            query_methods.flatten!
-            (@query_methods ||= []).concat(query_methods)
-            delegate(*query_methods, to: :builder)
+            delegate(*query_class.monadic_query_methods, to: :builder)
             self
         end
 
@@ -82,8 +76,7 @@ module Anaguma
         end
 
         def query_methods
-            @_query_methods ||= inherited_attribute(:query_methods).compact \
-                .first or raise(RuntimeError, "No query_methods specified.")
+            query_class.monadic_query_methods
         end
 
         def scope

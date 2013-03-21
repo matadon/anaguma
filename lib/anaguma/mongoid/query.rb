@@ -7,6 +7,10 @@ module Anaguma
 
             attr_reader :_criteria
 
+            def self.monadic_query_methods
+                %w(where compare)
+            end
+
             def initialize(scope)
                 @_criteria = scope unless scope.is_a?(self.class) 
                 @_criteria ||= scope._criteria

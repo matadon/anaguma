@@ -6,6 +6,10 @@ module Anaguma
             Anaguma::Builder.new(base, :condition)
         end
 
+        def self.monadic_query_methods
+            %w(condition)
+        end
+
         def initialize(condition = nil)
             @condition = condition
         end
