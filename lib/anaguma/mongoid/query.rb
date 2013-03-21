@@ -1,23 +1,18 @@
 require 'mongoid'
+require "anaguma/query"
 
 module Anaguma
     module Mongoid
-        class Query
-            include Enumerable
+        class Query < Anaguma::Query
+            chain :where, :limit, :skip
 
-            attr_reader :_criteria
-
-            def self.monadic_query_methods
+            def self.monadic_methods
                 %w(where compare)
             end
 
-            def initialize(scope)
-                @_criteria = scope unless scope.is_a?(self.class) 
-                @_criteria ||= scope._criteria
-            end
 
-            def where(conditions = {})
-                self.class.new(@_criteria.where(conditions))
+            def criteria
+                @scope
             end
 
             def compare(term, options = {})
@@ -43,39 +38,23 @@ module Anaguma
                 collection.aggregate(*pipeline)
             end
 
-            def limit(count)
-                self.class.new(@_criteria.limit(count))
-            end
-
-            def skip(count)
-                self.class.new(@_criteria.skip(count))
-            end
-
             def offset(count)
                 skip(count)
             end
 
             def tuples(reload = false)
                 @_tuples = nil if reload
-                @_tuples ||= @_criteria.query.to_a
+                @_tuples ||= @scope.query.to_a
             end
 
             def count(reload = false)
                 @_count = nil if reload
-                @count ||= @_criteria.count
-            end
-
-            def empty?
-                count == 0
-            end
-
-            def each(&block)
-                tuples.each(&block)
+                @count ||= @scope.count
             end
 
             def merge(boolean, *queries)
                 self.class.new(merge_criteria(boolean, 
-                    queries.flatten.unshift(self).map(&:_criteria)))
+                    queries.flatten.unshift(self).map(&:criteria)))
             end
 
             private
@@ -107,7 +86,7 @@ module Anaguma
             end
 
             def collection
-                @_criteria.collection
+                @scope.collection
             end
         end
     end

@@ -29,6 +29,6 @@ MongoidTesting.test(self, Anaguma::Mongoid::Searchable) do
         model.should_not respond_to(:search)
         model.send(:include, Anaguma::Mongoid::Searchable)
         model.should respond_to(:search)
-        model.search("")._criteria.should == model.all
+        model.search("").criteria.should == model.all
     end
 end

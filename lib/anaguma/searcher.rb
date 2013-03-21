@@ -1,13 +1,10 @@
 require 'anaguma/builder'
-require 'anaguma/delegation'
 require 'anaguma/matcher'
 require 'anaguma/matched_term'
 require 'anaguma/search_parser'
 
 module Anaguma
     class Searcher
-        include Delegation
-
         attr_reader :builder, :term, :matcher
 
         def self.parser(parser)
@@ -17,7 +14,6 @@ module Anaguma
 
         def self.query_class(query_class)
             @query_class = query_class
-            delegate(*query_class.monadic_query_methods, to: :builder)
             self
         end
 
@@ -59,7 +55,7 @@ module Anaguma
         end
 
         def initialize(scope, parser = nil)
-            @scope = Builder.new(query_class.new(scope), *query_methods)
+            @scope = Builder.new(query_class.new(scope), *monadic_methods)
             @builder = @scope
             @parser = parser
         end
@@ -73,10 +69,6 @@ module Anaguma
         def query_class
             @_query_class ||= inherited_attribute(:query_class).compact.first \
                 or raise(RuntimeError, "No query_class specified.")
-        end
-
-        def query_methods
-            query_class.monadic_query_methods
         end
 
         def scope
@@ -113,7 +105,8 @@ module Anaguma
         end
 
         def apply_matcher_to_term(matcher, term)
-            @builder = Builder.new(query_class.new(scope), *query_methods)
+            @builder = Builder.new(query_class.new(scope),
+                *monadic_methods)
             @term, @matcher = term, matcher
             call(matcher.rule) if matcher.rule
             @builder.result
@@ -135,6 +128,16 @@ module Anaguma
                 klass = klass.superclass
             end
             result
+        end
+
+        def monadic_methods
+            @_monadic_methods ||= query_class \
+                .monadic_methods.map(&:to_s)
+        end
+
+        def method_missing(method, *args, &block)
+            return(super) unless monadic_methods.include?(method.to_s)
+            @builder.send(method, *args, &block)
         end
     end
 end

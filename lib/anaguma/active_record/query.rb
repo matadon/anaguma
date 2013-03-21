@@ -1,127 +1,72 @@
 require "active_record"
 require "anaguma/builder"
+require "anaguma/query"
 
 module Anaguma
     module ActiveRecord
-        class Query
-            include Enumerable
+        class Query < Anaguma::Query
+            OPERATORS = { lt: '<', gt: '>', lte: '<=', gte: '>=', ne: '!=',
+                notlike: '!=', eq:'=', like:'=' }
 
-            attr_reader :relation
-
-            def self.monadic_query_methods
+            chain :select, :from, :joins, :includes, :where, :having,
+                :group, :order, :reorder, :limit, :offset
+            
+            def self.monadic_methods
                 %w(select limit offset group having where compare)
             end
 
             def initialize(scope)
-                if(scope.is_a?(self.class))
-                    @relation = scope.relation
-                elsif(scope.is_a?(::ActiveRecord::Relation))
-                    @relation = scope
-                else
-                    @relation = ::ActiveRecord::Relation.new(scope,
-                        scope.arel_table)
-                end
+                return(super) if scope.is_a?(self.class)
+                return(super) if scope.is_a?(::ActiveRecord::Relation)
+                use_scope(::ActiveRecord::Relation.new(scope,
+                    scope.arel_table))
             end
 
-            def select(value = nil)
-                value = value.to_s if value.is_a?(Symbol)
-                chain(@relation.select(value))
+            def relation
+                @scope
             end
-
-            def from(value = nil)
-                chain(@relation.from(value.to_s))
-            end
-
-            def joins(*args)
-                chain(@relation.joins(*args))
-            end
-
-            def includes(*args)
-                chain(@relation.includes(*args))
-            end
-
-            def where(*args)
-                args = [{}] if args.empty?
-                chain(@relation.where(*args))
-            end
-
-            def having(*args)
-                args = [{}] if args.empty?
-                chain(@relation.having(*args))
-            end
-
-            def group(*args)
-                chain(@relation.group(*args))
-            end
-
-            def order(*args)
-                chain(@relation.order(*args))
-            end
-
-            def reorder(*args)
-                chain(@relation.reorder(*args))
-            end
-
-            def limit(count = nil)
-                chain(@relation.limit(count))
-            end
-
-            def offset(count = nil)
-                chain(@relation.offset(count))
-            end
-
-            OPERATORS = {
-              lt: '<',
-              gt: '>',
-              lte: '<=',
-              gte: '>=',
-              ne: '!=',
-              notlike: '!=',
-              eq:'=',
-              like:'='
-            }
 
             def compare(term = nil, options = {})
-              return chain(@relation) unless term
-              unquoted_field = options[:field] || term.field
-              field = @relation.connection.quote_column_name(unquoted_field)
-              value = options[:value] || term.value
-              operator = (options[:operator] || term.operator)
-              operator or raise(ArgumentError,
-                "Cannot match term with operator #{term.operator}")
+                return self.class.new(@scope) unless term
+                unquoted_field = options[:field] || term.field
+                field = @scope.connection.quote_column_name(unquoted_field)
+                value = options[:value] || term.value
+                operator = (options[:operator] || term.operator)
+                operator or raise(ArgumentError,
+                    "Cannot match term with operator #{term.operator}")
 
-              return where(where_term_for(field, operator.to_sym, value)) \
-                unless options[:any] || options[:all]
+                return where(where_term_for(field, operator.to_sym, value)) \
+                    unless options[:any] || options[:all]
 
-              builder = lambda { |f| where_term_for(f, operator.to_sym, value) }
-              result = self
-              if options[:any]
-                predicate = term.not? ? :and : :or
-                clauses = options[:any].map(&builder)
-                combined = combine_and_wrap(predicate, clauses)
-                result = result.where(combined)
-              end
-              if options[:all]
-                predicate = term.not? ? :or : :and
-                clauses = options[:all].map(&builder)
-                combined = combine_and_wrap(predicate, clauses)
-                result = result.where(combined)
-              end
-              return result
+                builder = lambda { |f| where_term_for(f, operator.to_sym, value) }
+                result = self
+                if options[:any]
+                    predicate = term.not? ? :and : :or
+                    clauses = options[:any].map(&builder)
+                    combined = combine_and_wrap(predicate, clauses)
+                    result = result.where(combined)
+                end
+                if options[:all]
+                    predicate = term.not? ? :or : :and
+                    clauses = options[:all].map(&builder)
+                    combined = combine_and_wrap(predicate, clauses)
+                    result = result.where(combined)
+                end
+                result
             end
 
             def to_sql
-                @relation.to_sql
+                @scope.to_sql
             end
 
             def clause(key)
                 case(key.to_s)
                 when "from", "limit", "offset"
-                    @relation.send("#{key}_value")
+                    @scope.send("#{key}_value")
                 when "select", "joins", "includes", "group", "order"
-                    @relation.send("#{key}_values")
+                    @scope.send("#{key}_values").map(&:to_s)
                 when "where", "having"
-                    @relation.send("#{key}_values").map { |item|
+                    @scope.send("#{key}_values").map { |item|
                         item.respond_to?(:to_sql) ? item.to_sql : item }
                 else
                     raise(NoMethodError,
@@ -143,30 +88,22 @@ module Anaguma
 
                 clauses[:where] = combine_and_wrap(predicate, clauses[:where])
                 clauses[:having] = combine_and_wrap(predicate, clauses[:having])
-                chain(build_new_relation_from_clauses(clauses))
+                self.class.new((build_new_relation_from_clauses(clauses)))
             end
 
             def tuples(reload = false)
                 @_tuples = nil if reload
                 @_tuples ||= connection.select_all(to_sql).map do |tuple|
                     tuple.each do |key, value|
-                        next unless (column = @relation.columns_hash[key])
+                        next unless (column = @scope.columns_hash[key])
                         tuple[key] = column.type_cast(value)
                     end
                 end
             end
 
-            def each(&block)
-                tuples.each(&block)
-            end
-
             def count(reload = false)
                 @_count = nil if reload
-                @_count ||= @relation.count
-            end
-
-            def empty?
-                count == 0
+                @_count ||= @scope.count
             end
 
             def ==(other)
@@ -175,17 +112,13 @@ module Anaguma
             end
 
             def to_sql
-                @relation.to_sql
+                @scope.to_sql
             end
 
             private
 
             def connection
-                @relation.connection
-            end
-
-            def chain(relation)
-                self.class.new(relation)
+                @scope.connection
             end
 
             def merge_unpredicated_clauses(result, query)
@@ -201,8 +134,8 @@ module Anaguma
             end
 
             def build_new_relation_from_clauses(clauses)
-                relation = ::ActiveRecord::Relation.new(@relation.klass,
-                    @relation.table)
+                relation = ::ActiveRecord::Relation.new(@scope.klass,
+                    @scope.table)
                 builder = Builder.new(relation, %w(select from joins includes
                     where having group order limit offset))
                 builder.select(clauses[:select].uniq) \

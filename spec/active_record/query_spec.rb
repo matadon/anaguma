@@ -26,11 +26,11 @@ describe Anaguma::ActiveRecord::Query do
         end
 
         it "single column" do
-            expect(query.select(:id).clause(:select)).to eq(%w(id))
+            expect(query.select('id').clause(:select)).to eq(%w(id))
         end
 
         it "multiple invocations" do
-            updated = query.select(:one).select('two')
+            updated = query.select('one').select('two')
             expect(updated.clause(:select)).to eq(%w(one two))
         end
 
@@ -41,135 +41,135 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#compare" do
-      def clause(name, operator, value)
-        name = Regexp.quote name.to_s
-        operator = Regexp.quote operator.to_s
-        value = Regexp.quote value.to_s
-        quoting = /[\s\`\'\"]*/
-        /#{quoting}#{name}#{quoting}#{operator}#{quoting}#{value}#{quoting}/
-      end
+            def clause(name, operator, value)
+                name = Regexp.quote name.to_s
+                operator = Regexp.quote operator.to_s
+                value = Regexp.quote value.to_s
+                quoting = /[\s\`\'\"]*/
+                /#{quoting}#{name}#{quoting}#{operator}#{quoting}#{value}#{quoting}/
+            end
 
-      it_behaves_like "a monad", on: :compare
+            it_behaves_like "a monad", on: :compare
 
-      it 'eq' do
-        term = double(field: 'name', operator:'eq', value:'billy')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('name','=','billy'))
-      end
+            it 'eq' do
+                term = double(field: 'name', operator:'eq', value:'billy')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('name','=','billy'))
+            end
 
-      it 'ne' do
-        term = double(field: 'name', operator:'ne', value:'billy')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('name','!=','billy'))
-      end
+            it 'ne' do
+                term = double(field: 'name', operator:'ne', value:'billy')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('name','!=','billy'))
+            end
 
-      it 'lt' do
-        term = double(field: 'age', operator:'lt', value:'1')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('age','<',1))
-      end
+            it 'lt' do
+                term = double(field: 'age', operator:'lt', value:'1')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('age','<',1))
+            end
 
-      it 'gt' do
-        term = double(field: 'age', operator:'gt', value:'1')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('age','>',1))
-      end
+            it 'gt' do
+                term = double(field: 'age', operator:'gt', value:'1')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('age','>',1))
+            end
 
-      it 'lte' do
-        term = double(field: 'age', operator: 'lte', value: '1')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('age', '<=', 1))
-      end
+            it 'lte' do
+                term = double(field: 'age', operator: 'lte', value: '1')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('age', '<=', 1))
+            end
 
-      it 'gte' do
-        term = double(field: 'age', operator: 'gte', value: '1')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('age', '>=', 1))
-      end
+            it 'gte' do
+                term = double(field: 'age', operator: 'gte', value: '1')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('age', '>=', 1))
+            end
 
-      it 'like same as eq' do
-        term = double(field: 'name', operator: 'like', value: 'billy')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('name', '=', 'billy'))
-      end
+            it 'like same as eq' do
+                term = double(field: 'name', operator: 'like', value: 'billy')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+            end
 
-      it 'notlike same as ne' do
-        term = double(field: 'name', operator: 'notlike', value: 'billy')
-        where_clauses = query.compare(term).clause(:where)
-        expect(where_clauses.count).to eq(1)
-        expect(where_clauses.first).to match(clause('name', '!=', 'billy'))
-      end
+            it 'notlike same as ne' do
+                term = double(field: 'name', operator: 'notlike', value: 'billy')
+                where_clauses = query.compare(term).clause(:where)
+                expect(where_clauses.count).to eq(1)
+                expect(where_clauses.first).to match(clause('name', '!=', 'billy'))
+            end
 
-      context 'options' do
-        it 'operator override' do
-          term = double(field: 'name', operator: 'gte', value: 'billy')
-          where_clauses = query.compare(term, operator: 'eq').clause(:where)
-          expect(where_clauses.count).to eq(1)
-          expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+            context 'options' do
+                it 'operator override' do
+                    term = double(field: 'name', operator: 'gte', value: 'billy')
+                    where_clauses = query.compare(term, operator: 'eq').clause(:where)
+                    expect(where_clauses.count).to eq(1)
+                    expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+                end
+
+                it 'value override' do
+                    term = double(field: 'name', operator: 'eq', value: 'billy')
+                    where_clauses = query.compare(term, value: 'johnny').clause(:where)
+                    expect(where_clauses.count).to eq(1)
+                    expect(where_clauses.first).to match(clause('name', '=', 'johnny'))
+                end
+
+                it 'field override' do
+                    term = double(field: 'moo', operator: 'eq', value: 'billy')
+                    where_clauses = query.compare(term, field: 'name').clause(:where)
+                    expect(where_clauses.count).to eq(1)
+                    expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+                end
+
+                it 'any' do
+                    term = double(field: 'moniker', operator: 'eq', value: 'billy',
+                        not?: false)
+                    where_clauses = query.compare(term, any: %w(name surname)) \
+                        .clause(:where)
+                    left = clause('name', '=', 'billy')
+                    right = clause('surname', '=', 'billy')
+                    expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
+                end
+
+                it 'all' do
+                    term = double(field: 'moniker', operator: 'eq', value: 'billy',
+                        not?: false)
+                    where_clauses = query.compare(term, all:%w(name surname)) \
+                        .clause(:where)
+                    left = clause('name', '=', 'billy')
+                    right = clause('surname', '=', 'billy')
+                    expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
+                end
+
+                it 'not any' do
+                    term = double(field: 'moniker', operator: 'ne', value: 'billy',
+                        not?: true)
+                    where_clauses = query.compare(term, any: %w(name surname)) \
+                        .clause(:where)
+                    left = clause('name', '!=', 'billy')
+                    right = clause('surname', '!=', 'billy')
+                    expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
+                end
+
+                it 'not all' do
+                    term = double(field: 'moniker', operator: 'ne', value: 'billy',
+                        not?: true)
+                    where_clauses = query.compare(term, all: %w(name surname)) \
+                        .clause(:where)
+                    left = clause('name', '!=', 'billy')
+                    right = clause('surname', '!=', 'billy')
+                    expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
+                end
+            end
         end
-
-        it 'value override' do
-          term = double(field: 'name', operator: 'eq', value: 'billy')
-          where_clauses = query.compare(term, value: 'johnny').clause(:where)
-          expect(where_clauses.count).to eq(1)
-          expect(where_clauses.first).to match(clause('name', '=', 'johnny'))
-        end
-
-        it 'field override' do
-          term = double(field: 'moo', operator: 'eq', value: 'billy')
-          where_clauses = query.compare(term, field: 'name').clause(:where)
-          expect(where_clauses.count).to eq(1)
-          expect(where_clauses.first).to match(clause('name', '=', 'billy'))
-        end
-
-        it 'any' do
-          term = double(field: 'moniker', operator: 'eq', value: 'billy',
-            not?: false)
-          where_clauses = query.compare(term, any: %w(name surname)) \
-            .clause(:where)
-          left = clause('name', '=', 'billy')
-          right = clause('surname', '=', 'billy')
-          expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
-        end
-
-        it 'all' do
-          term = double(field: 'moniker', operator: 'eq', value: 'billy',
-            not?: false)
-          where_clauses = query.compare(term, all:%w(name surname)) \
-            .clause(:where)
-          left = clause('name', '=', 'billy')
-          right = clause('surname', '=', 'billy')
-          expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
-        end
-
-        it 'not any' do
-          term = double(field: 'moniker', operator: 'ne', value: 'billy',
-            not?: true)
-          where_clauses = query.compare(term, any: %w(name surname)) \
-            .clause(:where)
-          left = clause('name', '!=', 'billy')
-          right = clause('surname', '!=', 'billy')
-          expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
-        end
-
-        it 'not all' do
-          term = double(field: 'moniker', operator: 'ne', value: 'billy',
-            not?: true)
-          where_clauses = query.compare(term, all: %w(name surname)) \
-            .clause(:where)
-          left = clause('name', '!=', 'billy')
-          right = clause('surname', '!=', 'billy')
-          expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
-        end
-      end
-    end
 
     describe "#from" do
         it_behaves_like "a monad", on: :from
@@ -179,11 +179,11 @@ describe Anaguma::ActiveRecord::Query do
         end
 
         it "single table" do
-            expect(query.from(:monkeys).clause(:from)).to eq("monkeys")
+            expect(query.from('monkeys').clause(:from)).to eq("monkeys")
         end
 
         it "multiple invocations" do
-            updated = query.from(:one).from('two')
+            updated = query.from('one').from('two')
             expect(updated.clause(:from)).to eq("two")
         end
     end

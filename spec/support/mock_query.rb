@@ -6,7 +6,7 @@ module Anaguma
             Anaguma::Builder.new(base, :condition)
         end
 
-        def self.monadic_query_methods
+        def self.monadic_methods
             %w(condition)
         end
 
