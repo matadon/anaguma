@@ -107,9 +107,66 @@ describe Anaguma::Searcher do
         end
     end
 
-    pending "#any_of"
+    describe '#any_of' do
+      pending 'returns the query'
 
-    pending "#all_of"
+      it 'without nesting' do
+        searcher_class.rule do |term|
+          any_of do
+            condition 'a'
+            condition 'b'
+            condition 'c'
+          end
+        end
+        expect(searcher.search('something').to_s).to eq('(or a b c)')
+      end
+
+      it 'with nesting' do
+        searcher_class.rule do |term|
+          any_of do
+            condition 'a'
+            condition 'b'
+            all_of do
+              condition 'c'
+              condition 'd'
+            end
+          end
+        end
+
+        expect(searcher.search('something').to_s).to eq('(or a b (and c d))')
+      end
+    end
+
+    describe '#all_of' do
+
+      pending 'returns the query'
+
+      it "single nesting" do
+        searcher_class.rule do |term|
+          all_of do
+            condition 'a'
+            condition 'b'
+            condition 'c'
+          end
+        end
+        expect(searcher.search('something').to_s).to eq('(and a b c)')
+      end
+
+      it 'with nesting' do
+        searcher_class.rule do |term|
+          all_of do
+            condition 'a'
+            condition 'b'
+            any_of do
+              condition 'c'
+              condition 'd'
+            end
+          end
+        end
+
+        expect(searcher.search('something').to_s).to eq('(and a b (or c d))')
+      end
+    end
 
     describe "#search" do
         it "nil returns scope" do

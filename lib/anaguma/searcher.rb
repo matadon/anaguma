@@ -90,6 +90,18 @@ module Anaguma
             builder.merge(predicate)
         end
 
+        def any_of(&block)
+          query = merge(:or, &block)
+          @builder.push query
+          query
+        end
+
+        def all_of(&block)
+          query = merge(:and, &block)
+          @builder.push query
+          query
+        end
+
         def compile(root)
             merge(root.predicate) do
                 root.each do |node|
