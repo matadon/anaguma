@@ -6,42 +6,37 @@ MongoidTesting.test(self, Anaguma::Mongoid::Searcher) do
 
     let(:klass) do 
         Class.new(Anaguma::Mongoid::Searcher) do
-            match(:name)
-            match(:flags)
-            match(:age)
-            match(:rental)
-            match(:generic)
-
-            rule(:name) do
+            rule(:name) do |term|
                 return unless (term.field == 'name')
-                term.reject!
+                term.consume!
                 compare(term, any: %w(first_name last_name))
             end
 
-            rule(:age) do
+            rule(:age) do |term|
                 return unless (term.field == 'age')
                 return unless (term.operator == :like)
-                term.reject!
+                term.consume!
                 min, max = (term.value.to_i - 3), (term.value.to_i + 3)
                 where('age' => { '$gt' => min, '$lt' => max })
             end
 
-            rule(:flags) do
+            rule(:flags) do |term|
                 return unless (term.field == 'is')
-                term.reject!
+                term.consume!
                 where(staff: (not term.not?)) \
                     if (term.value.downcase == 'staff')
             end
 
-            rule(:rental) do
+            rule(:rental) do |term|
                 return unless (term.field == 'rental')
-                term.reject!
+                term.consume!
                 compare(term, any: %w(rentals.vehicle.make
                     rentals.vehicle.model rentals.vehicle.year
                     rentals.vehicle.color rentals.vehicle.rate
                     rentals.vehicle.mileage))
             end
-            rule(:generic) do
+
+            rule(:generic) do |term|
                 next(compare(term)) if term.field
                 compare(term, any: %w(first_name last_name drivers_license
                     build gender age))

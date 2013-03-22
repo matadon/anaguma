@@ -2,344 +2,195 @@ require 'spec_helper'
 require 'anaguma/searcher'
 
 describe Anaguma::Searcher do
-    let(:searcher) do
+    let(:searcher_class) do
         Class.new(Anaguma::Searcher) { query_class(Anaguma::MockQuery) }
     end
 
     let(:query) { String.new }
 
-    let(:instance) { searcher.new(query) }
+    let(:searcher) { searcher_class.new(query) }
 
-    context ".parser" do
+    describe ".parser" do
         it "default" do
-            instance.parser.should be_a(Anaguma::SearchParser)
+            searcher.parser.should be_a(Anaguma::SearchParser)
         end
 
         it "configurable" do
             parser = Class.new
-            searcher.parser(parser)
-            instance.parser.should be_an_instance_of(parser)
+            searcher_class.parser(parser)
+            searcher.parser.should be_an_instance_of(parser)
         end
 
         it "configurable when instantiated" do
             parser = Class.new
-            searcher.new(nil, parser).parser.should be_a(parser)
+            searcher_class.new(nil, parser).parser.should be_a(parser)
         end
 
         it "inherits" do
             parser = Class.new
-            searcher.parser(parser)
-            subclass = Class.new(searcher)
+            searcher_class.parser(parser)
+            subclass = Class.new(searcher_class)
             subclass.new(query).parser.should be_an_instance_of(parser)
         end
 
         it "overrides inherited" do
-            searcher.parser(Class.new)
-            subclass = Class.new(searcher)
+            searcher_class.parser(Class.new)
+            subclass = Class.new(searcher_class)
             parser = Class.new
             subclass.parser(parser)
             subclass.new(query).parser.should be_an_instance_of(parser)
         end
     end
 
-    context ".query_class" do
-        let(:searcher) { Class.new(Anaguma::Searcher) }
+    describe ".query_class" do
+        let(:searcher_class) { Class.new(Anaguma::Searcher) }
 
         it "no default value" do
-            expect(-> { instance.query_class }) \
+            expect(-> { searcher.query_class }) \
                 .to raise_error(RuntimeError)
         end
 
         it "configurable" do
-            searcher.query_class(Anaguma::MockQuery)
-            expect(instance.query_class).to eq(Anaguma::MockQuery)
+            searcher_class.query_class(Anaguma::MockQuery)
+            expect(searcher.query_class).to eq(Anaguma::MockQuery)
         end
 
         it "inherits" do
-            searcher.query_class(Anaguma::MockQuery)
-            subclass = Class.new(searcher)
+            searcher_class.query_class(Anaguma::MockQuery)
+            subclass = Class.new(searcher_class)
             subclass.new(query).query_class.should eq(Anaguma::MockQuery)
         end
 
         it "overrides inherited" do
-            searcher.query_class(Anaguma::MockQuery)
-            subclass = Class.new(searcher)
+            searcher_class.query_class(Anaguma::MockQuery)
+            subclass = Class.new(searcher_class)
             query_class = Class.new(Anaguma::MockQuery)
             subclass.query_class(query_class)
             subclass.new(query).query_class.should eq(query_class)
         end
     end
 
-    context "#scope" do
+    describe "#scope" do
         it "configured by #new" do
-            instance = searcher.new("foo")
-            instance.condition("bar").result.should == "foo bar"
+            expect(searcher_class.new("a").scope).to eq("a")
         end
 
         it "modifiable" do
-            instance.builder.should_not be_nil
-            instance.builder.result.should == ""
-            instance.condition("foo").result.should == "foo"
+            expect(searcher_class.new("a").condition("b").scope).to eq("a b")
         end
     end
 
-    context ".rule" do
+    describe ".rule" do
         it "define" do
-            searcher.rule(:generic) { 42 }
-            instance.call(:generic).should == 42
+            searcher_class.rule { 42 }
+            rule = searcher.send(:rules).first
+            searcher.send(rule).should == 42
         end
 
-        it "redefines" do
-            searcher.rule(:generic) { 42 }
-            expect(lambda { searcher.rule(:generic) { 42 } }).to \
-                raise_error(ArgumentError)
+        it "ordered" do
+            100.times { |i| searcher_class.rule { i } }
+            sequence = searcher.send(:rules).map { |r| searcher.send(r) }
+            expect(sequence).to eq(100.times.to_a)
         end
 
-        it "inherits" do
-            searcher.rule(:generic) { 42 }
-            subclass = Class.new(searcher)
-            subclass.new(query).call(:generic).should == 42
-        end
-
-        it "redefines inherited" do
-            searcher.rule(:generic) { 42 }
-            subclass = Class.new(searcher)
-            subclass.rule(:generic) { 19 }
-            subclass.new(query).call(:generic).should == 19
-        end
-
-        it "runs in searcher instance context" do
-            searcher.rule(:generic) { self }
-            instance.call(:generic).should == instance
+        it "runs in searcher_class searcher context" do
+            searcher_class.rule { self }
+            rule = searcher.send(:rules).first
+            searcher.send(rule).should == searcher
         end
 
         it "early return" do
-            searcher.rule(:generic) { return }
-            expect(-> { instance.call(:generic) }) \
-                .to_not raise_error(LocalJumpError)
+            searcher_class.rule { return }
+            rule = searcher.send(:rules).first
+            expect(-> { searcher.send(rule) }).to_not \
+                raise_error(LocalJumpError)
         end
     end
 
-    context "#apply_matcher_to_term" do
-        let(:matcher) { double(rule: :generic) }
-
-        let(:term) { double("Term", field: 'name', value: 'alice') }
-
-        it "returns a query" do
-            searcher.rule(:generic) { condition('true') }
-            result = instance.apply_matcher_to_term(matcher, term)
-            result.should be_an_instance_of(Anaguma::MockQuery)
-            result.should_not == query
+    describe "#search" do
+        it "nil returns scope" do
+            result = searcher.search(nil)
+            expect(result).to be_a(Anaguma::MockQuery)
+            expect(result).to eq(searcher.scope)
         end
 
-        it "builder" do
-            searcher.rule(:generic) { condition(builder.class) }
-            result = instance.apply_matcher_to_term(matcher, term)
-            result.should == "Anaguma::Builder"
-        end
-        
-        it "term" do
-            searcher.rule(:generic) { condition(term.value) }
-            result = instance.apply_matcher_to_term(matcher, term)
-            result.should == "alice"
+        it "empty search string returns scope" do
+            result = searcher.search("")
+            expect(result).to be_a(Anaguma::MockQuery)
+            expect(result).to eq(searcher.scope)
         end
 
-        it "matcher" do
-            searcher.rule(:generic) { condition(matcher.rule) }
-            result = instance.apply_matcher_to_term(matcher, term)
-            result.should == "generic"
-        end
-    end
-
-    context "#match_and_apply_rules" do
-        let(:matcher) { double(rule: :generic) }
-
-        let(:term) { double("Term", field: 'name', value: 'alice') }
-
-        before(:each) { searcher.rule(:generic) { condition(term.value) } }
-
-        it "matches nothing by default" do
-            result = instance.match_and_apply_rules(term)
-            result.should be_a(Array)
-            result.should be_empty
+        it "explodes if no ruleset is defined" do
+            expect(-> { searcher.search("alice") }).to \
+                raise_error(RuntimeError)
         end
 
-        it "returns a set of queries" do
-            searcher.match(:generic)
-            result = instance.match_and_apply_rules(term)
-            result.should be_a(Array)
-            result.count.should == 1
-            result.first.should be_a(Anaguma::MockQuery)
-            result.first.should == term.value
+        it "applies all rules in order" do
+            5.times { |index| searcher_class.rule { |term|
+                condition("#{index}#{term.value}") } }
+            result = searcher.search("a")
+            expect(result.to_s).to eq("(and 0a 1a 2a 3a 4a)")
         end
 
-        it "inherits" do
-            searcher.match(:generic)
-
-            subclass = Class.new(searcher)
-
-            result = subclass.new(query).match_and_apply_rules(term)
-            result.should be_a(Array)
-            result.count.should == 1
-            result.first.should be_a(Anaguma::MockQuery)
-            result.first.should == term.value
+        it "applies all rules until term is consumed" do
+            searcher_class.rule { |term| condition("a") and term.consume! }
+            searcher_class.rule { |term| condition("b") }
+            result = searcher.search("a")
+            expect(result.to_s).to eq("a")
         end
 
-        it "redefines inherited" do
-            searcher.match(:generic)
-
-            subclass = Class.new(searcher)
-            subclass.match(:generic)
-
-            result = subclass.new(query).match_and_apply_rules(term)
-            result.should be_a(Array)
-            result.count.should == 2
+        it "calls rules with terms" do
+            searcher_class.rule { |term| condition(term) }
+            result = searcher.search("name: alice")
+            result.to_s.should == "name:eq:alice"
         end
 
-        it "if-condition uses searcher instance context" do
-            searcher.match(:generic) { term.value == 'alice' }
-            result = instance.match_and_apply_rules(term)
-            result.first.should == term.value
+        it "or-group" do
+            searcher_class.rule(:action) { |term| condition(term) }
+            result = searcher.search("name: alice or name: bob")
+            result.to_s.should == "(or name:eq:alice name:eq:bob)"
         end
 
-        it "if-condition early return" do
-            searcher.match(:generic) { return }
-            expect(-> { instance.match_and_apply_rules(term) }) \
-                .to_not raise_error(LocalJumpError)
+        it "and-group" do
+            searcher_class.rule(:action) { |term| condition(term) }
+            result = searcher.search("name > a name < j")
+            result.to_s.should == "(and name:gt:a name:lt:j)"
         end
 
-        it "unless-condition uses searcher instance context" do
-            searcher.match(:generic, unless: Proc.new { term.value == 'bob' })
-            result = instance.match_and_apply_rules(term)
-            result.first.should == term.value
-        end
-
-        it "unless-condition early return" do
-            searcher.match(:generic, unless: -> { return })
-            expect(-> { instance.match_and_apply_rules(term) }) \
-                .to_not raise_error(LocalJumpError)
-        end
-
-        it "matches multiple times" do
-            target = double
-            target.should_receive(:ping).twice
-            searcher.rule(:ping) { target.ping }
-            searcher.match(:ping)
-            searcher.match(:ping)
-            instance.match_and_apply_rules(term)
-        end
-
-        it "matches in order" do
-            target = double
-            target.should_receive(:first).ordered
-            target.should_receive(:second).ordered
-            target.should_receive(:third).ordered
-
-            subclass = Class.new(searcher)
-            searcher.rule(:first) { target.first }
-            subclass.rule(:second) { target.second }
-            subclass.rule(:third) { target.third }
-            
-            searcher.match(:first)
-            subclass.match(:second)
-            subclass.match(:third)
-            subclass.new(query).match_and_apply_rules(term)
-        end
-
-        it "orders matchers by rank" do
-            target = double
-            target.should_receive(:third).ordered
-            target.should_receive(:second).ordered
-            target.should_receive(:first).ordered
-
-            subclass = Class.new(searcher)
-            searcher.rule(:first) { target.first }
-            subclass.rule(:second) { target.second }
-            subclass.rule(:third) { target.third }
-            
-            searcher.match(:first, rank: 1000)
-            subclass.match(:second, rank: 100)
-            subclass.match(:third, rank: 10)
-            subclass.new(query).match_and_apply_rules(term)
-        end
-
-        it "rejects terms" do
-            target = double
-            target.should_not_receive(:ping)
-            searcher.rule(:firewall) { term.reject! }
-            searcher.rule(:ping) { target.ping }
-            searcher.match(:firewall)
-            searcher.match(:ping)
-            instance.match_and_apply_rules(term)
-        end
-
-        context "#filter" do
+        describe "#filter" do
             it "if false" do
                 target = double
                 target.should_not_receive(:ping)
-                searcher.rule(:ping) { target.ping }
-                searcher.filter { false }
-                searcher.match(:ping)
-                instance.match_and_apply_rules(term)
+                searcher_class.filter { false }
+                searcher_class.rule(:ping) { |t| target.ping }
+                searcher.search("name:alice")
             end
 
             it "if true" do
                 target = double
                 target.should_receive(:ping)
-                searcher.rule(:ping) { target.ping }
-                searcher.filter { true }
-                searcher.match(:ping)
-                instance.match_and_apply_rules(term)
+                searcher_class.filter { true }
+                searcher_class.rule(:ping) { |t| target.ping }
+                searcher.search("name:alice")
             end
         end
 
-        context "#permit" do
+        describe "#permit" do
             it "unmatched field" do
                 target = double
                 target.should_not_receive(:ping)
-                searcher.rule(:ping) { target.ping }
-                searcher.permit(:email)
-                searcher.match(:ping)
-                instance.match_and_apply_rules(term)
+                searcher_class.permit(:email)
+                searcher_class.rule(:ping) { |t| target.ping }
+                searcher.search("name:alice")
             end
 
             it "matched field" do
                 target = double
                 target.should_receive(:ping)
-                searcher.rule(:ping) { target.ping }
-                searcher.permit(:name)
-                searcher.match(:ping)
-                instance.match_and_apply_rules(term)
+                searcher_class.permit(:name)
+                searcher_class.rule(:ping) { |t| target.ping }
+                searcher.search("name:alice")
             end
-        end
-    end
-
-    context "#parse" do
-        it "match nothing by default" do
-            result = instance.parse("name: alice")
-            result.should be_a(Anaguma::MockQuery)
-            result.to_s.should == ""
-        end
-
-        it "match everything" do
-            searcher.match(:action)
-            searcher.rule(:action) { condition(term) }
-            result = instance.parse("name: alice")
-            result.to_s.should == "name:eq:alice"
-        end
-
-        it "or-group" do
-            searcher.match(:action)
-            searcher.rule(:action) { condition(term) }
-            result = instance.parse("name: alice or name: bob")
-            result.to_s.should == "(or name:eq:alice name:eq:bob)"
-        end
-
-        it "and-group" do
-            searcher.match(:action)
-            searcher.rule(:action) { condition(term) }
-            result = instance.parse("name > a name < j")
-            result.to_s.should == "(and name:gt:a name:lt:j)"
         end
     end
 end
