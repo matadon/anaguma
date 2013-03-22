@@ -70,16 +70,6 @@ describe Anaguma::Searcher do
         end
     end
 
-    describe "#scope" do
-        it "configured by #new" do
-            expect(searcher_class.new("a").scope).to eq("a")
-        end
-
-        it "modifiable" do
-            expect(searcher_class.new("a").condition("b").scope).to eq("a b")
-        end
-    end
-
     describe ".rule" do
         it "define" do
             searcher_class.rule { 42 }
@@ -106,6 +96,20 @@ describe Anaguma::Searcher do
                 raise_error(LocalJumpError)
         end
     end
+
+    describe "#scope" do
+        it "configured by #new" do
+            expect(searcher_class.new("a").scope).to eq("a")
+        end
+
+        it "modifiable" do
+            expect(searcher_class.new("a").condition("b").scope).to eq("a b")
+        end
+    end
+
+    pending "#any_of"
+
+    pending "#all_of"
 
     describe "#search" do
         it "nil returns scope" do

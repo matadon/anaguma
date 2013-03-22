@@ -26,6 +26,10 @@ module Anaguma
                 @scope
             end
 
+            def clear
+                self.class.new(@scope.only)
+            end
+
             def compare(term = nil, options = {})
                 return self.class.new(@scope) unless term
                 unquoted_field = options[:field] || term.field

@@ -18,6 +18,17 @@ describe Anaguma::ActiveRecord::Query do
         query.relation.should == relation
     end
 
+    describe "#clear" do
+        it_behaves_like "a monad", on: :clear
+
+        it "clears previously set conditions" do
+            uncleared = query.where(white: 'black')
+            cleared = uncleared.clear
+            expect(uncleared.relation.where_clauses).to_not be_empty
+            expect(cleared.relation.where_clauses).to be_empty
+        end
+    end
+
     describe "#select" do
         it_behaves_like "a monad", on: :select
 

@@ -1,4 +1,5 @@
 require 'anaguma/builder'
+require 'anaguma/merging_builder'
 require 'anaguma/consumable_term'
 require 'anaguma/search_parser'
 
@@ -46,6 +47,7 @@ module Anaguma
         def initialize(scope, parser = nil)
             @scope = Builder.new(query_class.new(scope), *monadic_methods)
             @builder = @scope
+            @stack = []
             @parser = parser
         end
 
@@ -79,24 +81,29 @@ module Anaguma
                 or raise("No rules defined for #{self}")
         end
 
+        def merge(predicate)
+            @stack.push(@builder)
+            builder = MergingBuilder.new(scope.clear, monadic_methods)
+            @builder = builder
+            yield
+            @builder = @stack.pop
+            builder.merge(predicate)
+        end
+
         def compile(root)
-            subqueries = root.inject([]) do |memo, node|
-                next(memo.push(compile(node))) if node.group?
-                memo.concat(apply_rules(rules, node))
+            merge(root.predicate) do
+                root.each do |node|
+                    next(@builder.push(compile(node))) if node.group?
+                    apply_rules(rules, node)
+                end
             end
-            head = subqueries.shift
-            return(head) if subqueries.empty?
-            head.merge(root.predicate, *subqueries)
         end
 
         def apply_rules(rules, node)
             term = ConsumableTerm.new(node)
             rules.inject([]) do |result, rule|
                 return(result) if term.consumed?
-                @builder = Builder.new(query_class.new(scope),
-                    *monadic_methods)
                 send(rule, term)
-                result.push(@builder.result)
             end
         end
 

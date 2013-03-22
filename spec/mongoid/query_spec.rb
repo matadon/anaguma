@@ -10,7 +10,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
 
     subject { new_query }
 
-    context "#where" do
+    describe "#where" do
         def where(*conditions, &block)
             result = query.where(*conditions)
             expect(result.tuples).to be_a(Array)
@@ -36,7 +36,18 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
             where(age: { "$lte" => 50 }) { |i| i['age'] <= 50 } }
     end
 
-    context "#aggregate" do
+    describe "#clear" do
+        it_behaves_like "a monad", on: :clear
+
+        it "clears previously set conditions" do
+            uncleared = query.where(white: 'black')
+            cleared = uncleared.clear
+            expect(uncleared.criteria.selector).to_not be_empty
+            expect(cleared.criteria.selector).to be_empty
+        end
+    end
+
+    describe "#aggregate" do
         it "count all users" do
             result = query.aggregate( \
                 { "$group" => { _id: 1, count: { "$sum" => 1 } } })
@@ -53,7 +64,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
         end
     end
 
-    context "#compare" do
+    describe "#compare" do
         it "term" do
             term = double(field: 'first_name', value: 'wyatt', operator: 'eq')
             result = query.compare(term)
@@ -92,7 +103,7 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
         end
     end
 
-    context "#merge" do
+    describe "#merge" do
         it ":and" do
             first = new_query.where(build: "athletic")
             second = new_query.where(age: { "$gt" => 18 })

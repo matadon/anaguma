@@ -10,9 +10,12 @@ module Anaguma
                 %w(where compare)
             end
 
-
             def criteria
                 @scope
+            end
+
+            def clear
+                self.class.new(::Mongoid::Criteria.new(@scope.klass))
             end
 
             def compare(term, options = {})

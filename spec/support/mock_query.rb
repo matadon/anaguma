@@ -7,7 +7,7 @@ module Anaguma
         end
 
         def self.monadic_methods
-            %w(condition)
+            %w(condition clear)
         end
 
         def initialize(condition = nil)
@@ -17,6 +17,10 @@ module Anaguma
         def condition(term)
             updated = [ @condition, term.to_s ].compact.join(" ").strip
             self.class.new(updated)
+        end
+
+        def clear
+            self.class.new
         end
 
         def to_s
