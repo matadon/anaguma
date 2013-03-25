@@ -6,18 +6,20 @@ module ActiveRecordTesting
         rule :smartness do |term|
             return unless (term.field == 'smartness')
             term.consume!
-            compare(term, all: %w(iq eq))
+            all_of { %w(iq eq).each { |f| compare(term, field: f) } }
         end
 
         rule :called do |term|
             return unless (term.field == 'called')
             term.consume!
-            compare(term, any: %w(name nickname))
+            fields = %w(name nickname)
+            any_of { fields.each { |f| compare(term, field: f) } }
         end
 
         rule :generic do |term|
             next(compare(term)) if term.field
-            compare(term, any: %w(name nickname age iq eq))
+            fields = %w(name nickname age iq eq)
+            any_of { fields.each { |f| compare(term, field: f) } }
         end
     end
 

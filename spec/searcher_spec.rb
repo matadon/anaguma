@@ -107,65 +107,74 @@ describe Anaguma::Searcher do
         end
     end
 
-    describe '#any_of' do
-      pending 'returns the query'
-
-      it 'without nesting' do
-        searcher_class.rule do |term|
-          any_of do
-            condition 'a'
-            condition 'b'
-            condition 'c'
-          end
+    describe "#any_of" do
+        it "handles term negation" do
+            searcher_class.rule { |term|
+                any_of { condition "a" ; condition "b" } }
+            expect(searcher.search("not thing").to_s).to eq("(and a b)")
         end
-        expect(searcher.search('something').to_s).to eq('(or a b c)')
-      end
 
-      it 'with nesting' do
-        searcher_class.rule do |term|
-          any_of do
-            condition 'a'
-            condition 'b'
-            all_of do
-              condition 'c'
-              condition 'd'
+        it "merges using :or" do
+            searcher_class.rule { |term|
+                any_of { condition "a" ; condition "b" } }
+            expect(searcher.search("something").to_s).to eq("(or a b)")
+        end
+
+        it "chains" do
+            searcher_class.rule { |term|
+                any_of { condition("a").condition("b" )} }
+            expect(searcher.search("something").to_s).to eq("(or a b)")
+        end
+
+        it "nests" do
+            searcher_class.rule do |term|
+                any_of do
+                    condition "a"
+                    condition "b"
+                    any_of do
+                        condition "c"
+                        condition "d"
+                    end
+                end
             end
-          end
+            expect(searcher.search("something").to_s).to \
+                eq("(or a b (or c d))")
         end
-
-        expect(searcher.search('something').to_s).to eq('(or a b (and c d))')
-      end
     end
 
-    describe '#all_of' do
-
-      pending 'returns the query'
-
-      it "single nesting" do
-        searcher_class.rule do |term|
-          all_of do
-            condition 'a'
-            condition 'b'
-            condition 'c'
-          end
+    describe "#all_of" do
+        it "handles term negation" do
+            searcher_class.rule { |term|
+                all_of { condition "a" ; condition "b" } }
+            expect(searcher.search("not thing").to_s).to eq("(or a b)")
         end
-        expect(searcher.search('something').to_s).to eq('(and a b c)')
-      end
 
-      it 'with nesting' do
-        searcher_class.rule do |term|
-          all_of do
-            condition 'a'
-            condition 'b'
-            any_of do
-              condition 'c'
-              condition 'd'
+        it "merges using :and" do
+            searcher_class.rule { |term|
+                all_of { condition "a" ; condition "b" } }
+            expect(searcher.search("something").to_s).to eq("(and a b)")
+        end
+
+        it "chains" do
+            searcher_class.rule { |term|
+                all_of { condition("a").condition("b" )} }
+            expect(searcher.search("something").to_s).to eq("(and a b)")
+        end
+
+        it "nests" do
+            searcher_class.rule do |term|
+                all_of do
+                    condition "a"
+                    condition "b"
+                    all_of do
+                        condition "c"
+                        condition "d"
+                    end
+                end
             end
-          end
+            expect(searcher.search("something").to_s).to \
+                eq("(and a b (and c d))")
         end
-
-        expect(searcher.search('something').to_s).to eq('(and a b (or c d))')
-      end
     end
 
     describe "#search" do

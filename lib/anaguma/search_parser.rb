@@ -75,7 +75,7 @@ module Anaguma
 
             def operator
                 infix = _field.is_a?(Field) ? _field.infix : ":"
-                return(OPERATORS[infix]) unless not?
+                return(OPERATORS[infix]) unless negated?
                 INVERSES[infix]
             end
 
@@ -96,7 +96,7 @@ module Anaguma
                 return(:double) if content.left == "\""
             end
 
-            def not?
+            def negated?
                 prefix and prefix.nonterminal? and prefix.not?
             end
 
@@ -107,7 +107,7 @@ module Anaguma
             def to_s
                 content = _value.content
                 quoted_value = "#{content.left}#{value}#{content.right}"
-                "#{not? ? "!" : ""}#{field}:#{operator}:#{quoted_value}"
+                "#{negated? ? "!" : ""}#{field}:#{operator}:#{quoted_value}"
             end
         end
 

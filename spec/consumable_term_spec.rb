@@ -7,7 +7,7 @@ describe Anaguma::ConsumableTerm do
     let(:consumable_term) { Anaguma::ConsumableTerm.new(term) }
 
     context "delegates to a term" do
-        methods_delegated_to_term = %w(field operator value quoting not?
+        methods_delegated_to_term = %w(field operator value quoting negated?
             plaintext)
 
         methods_delegated_to_term.each do |method|

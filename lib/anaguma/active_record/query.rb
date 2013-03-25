@@ -30,33 +30,10 @@ module Anaguma
                 self.class.new(@scope.only)
             end
 
-            def compare(term = nil, options = {})
-                return self.class.new(@scope) unless term
-                unquoted_field = options[:field] || term.field
-                field = @scope.connection.quote_column_name(unquoted_field)
-                value = options[:value] || term.value
-                operator = (options[:operator] || term.operator)
-                operator or raise(ArgumentError,
-                    "Cannot match term with operator #{term.operator}")
-
-                return where(where_term_for(field, operator.to_sym, value)) \
-                    unless options[:any] || options[:all]
-
-                builder = lambda { |f| where_term_for(f, operator.to_sym, value) }
-                result = self
-                if options[:any]
-                    predicate = term.not? ? :and : :or
-                    clauses = options[:any].map(&builder)
-                    combined = combine_and_wrap(predicate, clauses)
-                    result = result.where(combined)
-                end
-                if options[:all]
-                    predicate = term.not? ? :or : :and
-                    clauses = options[:all].map(&builder)
-                    combined = combine_and_wrap(predicate, clauses)
-                    result = result.where(combined)
-                end
-                result
+            def compare(*args)
+                field, operator, value = parse_args_for_compare(*args)
+                quoted_field = @scope.connection.quote_column_name(field)
+                where("#{quoted_field} #{OPERATORS[operator]} ?", value)
             end
 
             def to_sql
@@ -172,13 +149,6 @@ module Anaguma
                 return([ items.first ]) if (items.length == 1)
                 [ items.map { |i| "(#{i})" }.join(separator) ]
             end
-
-            def where_term_for(field, operator, value)
-              clause_before_condition = clause(:where)
-              conditional = where("#{field} #{OPERATORS[operator]} ?", value)
-              (conditional.clause(:where) - clause_before_condition).first
-            end
-
         end
     end
 end

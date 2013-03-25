@@ -63,9 +63,9 @@ describe Anaguma::Search do
             end
 
             context "#not?" do
-                it { expect(first_term("a")).to_not be_not }
-                it { expect(first_term("!a")).to be_not }
-                it { expect(first_term("!a")).to be_not }
+                it { expect(first_term("a")).to_not be_negated }
+                it { expect(first_term("!a")).to be_negated }
+                it { expect(first_term("!a")).to be_negated }
             end
 
             context "not #operator" do

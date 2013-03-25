@@ -91,15 +91,17 @@ module Anaguma
         end
 
         def any_of(&block)
-          query = merge(:or, &block)
-          @builder.push query
-          query
+            predicate = (@term and @term.negated?) ? :and : :or
+            query = merge(predicate, &block)
+            @builder.push(query)
+            query
         end
 
         def all_of(&block)
-          query = merge(:and, &block)
-          @builder.push query
-          query
+            predicate = (@term and @term.negated?) ? :or : :and
+            query = merge(predicate, &block)
+            @builder.push(query)
+            query
         end
 
         def compile(root)
@@ -112,10 +114,10 @@ module Anaguma
         end
 
         def apply_rules(rules, node)
-            term = ConsumableTerm.new(node)
+            @term = ConsumableTerm.new(node)
             rules.inject([]) do |result, rule|
-                return(result) if term.consumed?
-                send(rule, term)
+                return(result) if @term.consumed?
+                send(rule, @term)
             end
         end
 

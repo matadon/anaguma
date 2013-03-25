@@ -52,132 +52,77 @@ describe Anaguma::ActiveRecord::Query do
     end
 
     describe "#compare" do
-        def clause(name, operator, value)
-            name = Regexp.quote name.to_s
-            operator = Regexp.quote operator.to_s
-            value = Regexp.quote value.to_s
-            quoting = /[\s\`\'\"]*/
-            /#{quoting}#{name}#{quoting}#{operator}#{quoting}#{value}#{quoting}/
+        def clause(string)
+            quote = /[\s\`\'\"]*/
+            field, operator, value = string.split(/\s+/, 3) \
+                .map { |t| "#{quote}#{Regexp.quote(t)}#{quote}" }
+            /#{field}#{operator}#{value}/
         end
+
+        let(:term) { double(field: 'age', value: 30, operator: :eq) }
 
         it_behaves_like "a monad", on: :compare
 
-        it 'eq' do
-            term = double(field: 'name', operator:'eq', value:'billy')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('name','=','billy'))
+        it "uses field, operator, and value from term" do
+            result = query.compare(term).clause(:where)
+            expect(result.count).to be(1)
+            expect(result.first).to match(clause('age = 30'))
         end
 
-        it 'ne' do
-            term = double(field: 'name', operator:'ne', value:'billy')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('name','!=','billy'))
+        it "overrides field" do
+            result = query.compare(term, field: 'height').clause(:where)
+            expect(result.count).to be(1)
+            expect(result.first).to match(clause('height = 30'))
         end
 
-        it 'lt' do
-            term = double(field: 'age', operator:'lt', value:'1')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('age','<',1))
+        it "overrides operator" do
+            result = query.compare(term, operator: :gt).clause(:where)
+            expect(result.count).to be(1)
+            expect(result.first).to match(clause('age > 30'))
         end
 
-        it 'gt' do
-            term = double(field: 'age', operator:'gt', value:'1')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('age','>',1))
+        it "overrides value" do
+            result = query.compare(term, value: 969).clause(:where)
+            expect(result.count).to be(1)
+            expect(result.first).to match(clause('age = 969'))
         end
 
-        it 'lte' do
-            term = double(field: 'age', operator: 'lte', value: '1')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('age', '<=', 1))
+        it "works without passing a term" do
+            result = query.compare(field: 'age', operator: :eq, value: 30) \
+                .clause(:where)
+            expect(result.count).to be(1)
+            expect(result.first).to match(clause('age = 30'))
         end
 
-        it 'gte' do
-            term = double(field: 'age', operator: 'gte', value: '1')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('age', '>=', 1))
-        end
-
-        it 'like same as eq' do
-            term = double(field: 'name', operator: 'like', value: 'billy')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('name', '=', 'billy'))
-        end
-
-        it 'notlike same as ne' do
-            term = double(field: 'name', operator: 'notlike', value: 'billy')
-            where_clauses = query.compare(term).clause(:where)
-            expect(where_clauses.count).to eq(1)
-            expect(where_clauses.first).to match(clause('name', '!=', 'billy'))
-        end
-
-        context 'options' do
-            it 'operator override' do
-                term = double(field: 'name', operator: 'gte', value: 'billy')
-                where_clauses = query.compare(term, operator: 'eq').clause(:where)
-                expect(where_clauses.count).to eq(1)
-                expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+        context "operators" do
+            it 'eq' do
+                result = query.compare(term, operator: :eq).clause(:where)
+                expect(result.first).to match(clause('age = 30'))
             end
 
-            it 'value override' do
-                term = double(field: 'name', operator: 'eq', value: 'billy')
-                where_clauses = query.compare(term, value: 'johnny').clause(:where)
-                expect(where_clauses.count).to eq(1)
-                expect(where_clauses.first).to match(clause('name', '=', 'johnny'))
+            it 'ne' do
+                result = query.compare(term, operator: :ne).clause(:where)
+                expect(result.first).to match(clause('age != 30'))
             end
 
-            it 'field override' do
-                term = double(field: 'moo', operator: 'eq', value: 'billy')
-                where_clauses = query.compare(term, field: 'name').clause(:where)
-                expect(where_clauses.count).to eq(1)
-                expect(where_clauses.first).to match(clause('name', '=', 'billy'))
+            it 'lt' do
+                result = query.compare(term, operator: :lt).clause(:where)
+                expect(result.first).to match(clause('age < 30'))
             end
 
-            it 'any' do
-                term = double(field: 'moniker', operator: 'eq', value: 'billy',
-                    not?: false)
-                where_clauses = query.compare(term, any: %w(name surname)) \
-                    .clause(:where)
-                left = clause('name', '=', 'billy')
-                right = clause('surname', '=', 'billy')
-                expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
+            it 'gt' do
+                result = query.compare(term, operator: :gt).clause(:where)
+                expect(result.first).to match(clause('age > 30'))
             end
 
-            it 'all' do
-                term = double(field: 'moniker', operator: 'eq', value: 'billy',
-                    not?: false)
-                where_clauses = query.compare(term, all:%w(name surname)) \
-                    .clause(:where)
-                left = clause('name', '=', 'billy')
-                right = clause('surname', '=', 'billy')
-                expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
+            it 'lte' do
+                result = query.compare(term, operator: :lte).clause(:where)
+                expect(result.first).to match(clause('age <= 30'))
             end
 
-            it 'not any' do
-                term = double(field: 'moniker', operator: 'ne', value: 'billy',
-                    not?: true)
-                where_clauses = query.compare(term, any: %w(name surname)) \
-                    .clause(:where)
-                left = clause('name', '!=', 'billy')
-                right = clause('surname', '!=', 'billy')
-                expect(where_clauses.first).to match( /\(#{left}\) AND \(#{right}\)/ )
-            end
-
-            it 'not all' do
-                term = double(field: 'moniker', operator: 'ne', value: 'billy',
-                    not?: true)
-                where_clauses = query.compare(term, all: %w(name surname)) \
-                    .clause(:where)
-                left = clause('name', '!=', 'billy')
-                right = clause('surname', '!=', 'billy')
-                expect(where_clauses.first).to match( /\(#{left}\) OR \(#{right}\)/ )
+            it 'gte' do
+                result = query.compare(term, operator: :gte).clause(:where)
+                expect(result.first).to match(clause('age >= 30'))
             end
         end
     end

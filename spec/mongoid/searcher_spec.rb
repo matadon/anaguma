@@ -9,37 +9,31 @@ MongoidTesting.test(self, Anaguma::Mongoid::Searcher) do
             rule(:name) do |term|
                 return unless (term.field == 'name')
                 term.consume!
-                compare(term, any: %w(first_name last_name))
-            end
-
-            rule(:age) do |term|
-                return unless (term.field == 'age')
-                return unless (term.operator == :like)
-                term.consume!
-                min, max = (term.value.to_i - 3), (term.value.to_i + 3)
-                where('age' => { '$gt' => min, '$lt' => max })
+                fields = %w(first_name last_name)
+                any_of { fields.each { |f| compare(term, field: f) } }
             end
 
             rule(:flags) do |term|
                 return unless (term.field == 'is')
                 term.consume!
-                where(staff: (not term.not?)) \
+                where(staff: (not term.negated?)) \
                     if (term.value.downcase == 'staff')
             end
 
             rule(:rental) do |term|
                 return unless (term.field == 'rental')
                 term.consume!
-                compare(term, any: %w(rentals.vehicle.make
-                    rentals.vehicle.model rentals.vehicle.year
-                    rentals.vehicle.color rentals.vehicle.rate
-                    rentals.vehicle.mileage))
+                fields = %w(rentals.vehicle.make rentals.vehicle.model
+                    rentals.vehicle.year rentals.vehicle.color
+                    rentals.vehicle.rate rentals.vehicle.mileage)
+                any_of { fields.each { |f| compare(term, field: f) } }
             end
 
             rule(:generic) do |term|
                 next(compare(term)) if term.field
-                compare(term, any: %w(first_name last_name drivers_license
-                    build gender age))
+                fields = %w(first_name last_name drivers_license build
+                    gender age)
+                any_of { fields.each { |f| compare(term, field: f) } }
             end
         end
     end
@@ -61,8 +55,6 @@ MongoidTesting.test(self, Anaguma::Mongoid::Searcher) do
            it { searches_and_finds_nothing("name: emma and name: liam") }
            it { searches("name: emma or name: liam") { |t|
                 %w(emma liam).include?(t['first_name']) } }
-           it { searches("name ~ e*") { |t|
-               (t['first_name'] =~ /^e/i) or (t['last_name'] =~ /^e/i) } }
         end
 
         context "number" do
@@ -75,8 +67,6 @@ MongoidTesting.test(self, Anaguma::Mongoid::Searcher) do
            it { searches_and_finds_nothing("age < 29 and age > 40") }
            it { searches("age < 29 or age > 40") { |t|
                 ((t['age'] < 29) or (t['age'] > 40)) } }
-           it { searches("age ~ 29") { |t|
-                ((t['age'] > 26) and (t['age'] < 32)) } }
         end
 
         context "boolean" do

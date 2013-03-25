@@ -18,23 +18,10 @@ module Anaguma
                 self.class.new(::Mongoid::Criteria.new(@scope.klass))
             end
 
-            def compare(term, options = {})
-                operator = (options[:operator] or "$#{term.operator}")
-                value = (options[:value] or term.value)
-                field = (options[:field] or term.field)
-
-                return(where(build_condition(field, operator, value))) \
-                    unless (options[:any] or options[:all])
-
-                conditions = []
-                builder = lambda { |f| build_condition(f, operator, value) }
-                any_predicate = term.not? ? "$and" : "$or"
-                conditions << { any_predicate => options[:any] \
-                    .map(&builder) } if options[:any]
-                all_predicate = term.not? ? "$or" : "$and"
-                conditions << { all_predicate => options[:all] \
-                    .map(&builder) } if options[:all]
-                where(*conditions)
+            def compare(*args)
+                field, operator, value = parse_args_for_compare(*args)
+                return(where(field => value)) if (operator == :eq)
+                where(field => { "$#{operator}" => value })
             end
 
             def aggregate(*pipeline)
@@ -69,23 +56,6 @@ module Anaguma
                 merged_criteria.selector = Origin::Selector.new
                 return(merged_criteria) if selectors.empty?
                 merged_criteria.where("$#{boolean}" => selectors)
-            end
-
-            def build_condition(field, operator, value)
-                case(operator)
-                when "$eq"
-                    { field => value }
-                when "$like"
-                    pattern = value.gsub(/(\*|\?|[^\*\?]+)/).each do |match|
-                        next(".*") if (match == "*")
-                        next("?") if (match == "?")
-                        Regexp.quote(match)
-                    end
-                    regex = Regexp.new("^#{pattern}", Regexp::IGNORECASE)
-                    { field => { "$regex" => regex } }
-                else
-                    { field => { operator => value } }
-                end
             end
 
             def collection

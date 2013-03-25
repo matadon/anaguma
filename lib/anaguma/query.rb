@@ -1,3 +1,5 @@
+require "anaguma/maybe"
+
 module Anaguma
     #
     # .monadic_methods
@@ -51,7 +53,16 @@ module Anaguma
 
         private
 
-        def chain(method, *args)
+        def parse_args_for_compare(*args)
+            options = Maybe.new(args.last.is_a?(Hash) ? args.pop : {})
+            term = Maybe.new(args.first)
+
+            field = (options[:field].result or term.field.result)
+            operator = (options[:operator].to_sym.result \
+                or term.operator.to_sym.result)
+            value = (options[:value].result or term.value.result)
+
+            [ field, operator, value ]
         end
     end
 end

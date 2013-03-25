@@ -65,41 +65,43 @@ MongoidTesting.test(self, Anaguma::Mongoid::Query) do
     end
 
     describe "#compare" do
-        it "term" do
-            term = double(field: 'first_name', value: 'wyatt', operator: 'eq')
+        it_behaves_like "a monad", on: :compare
+
+        before(:each) { MongoidTesting::User.create!(age: 30) }
+
+        let(:term) { double(field: 'age', value: 30, operator: :eq) }
+
+        it "uses field, operator, and value from term" do
             result = query.compare(term)
-            expect(result.count).to eq(1)
-            expect(result.first['first_name']).to eq('wyatt')
+            expect(result).to_not be_empty
+            expect(result).to be_all { |i| i['age'] == 30 }
         end
 
-        it "any" do
-            term = double(field: 'name', value: 'wyatt', operator: 'gte',
-                not?: false)
-            result = query.compare(term, any: %w(first_name last_name))
-            expect(result.count).to eq(2)
-            expect(result).to be_any { |r| r['first_name'] == 'wyatt' }
-            expect(result).to be_any { |r| r['last_name'] == 'young' }
+        it "overrides field" do
+            MongoidTesting::User.create!(height: 30)
+            result = query.compare(term, field: 'height')
+            expect(result).to_not be_empty
+            expect(result).to be_all { |i| i['height'] == 30 }
         end
 
-        it "not any" do
-            term = double(field: 'name', value: 'wyatt', operator: 'ne',
-                not?: true)
-            result = query.compare(term, any: %w(first_name last_name))
-            expect(result.count).to eq(49)
+        it "overrides operator" do
+            MongoidTesting::User.create!(age: 31)
+            result = query.compare(term, operator: :gt)
+            expect(result).to_not be_empty
+            expect(result).to be_all { |i| i['age'] > 30 }
         end
 
-        it "all" do
-            term = double(field: 'name', value: 'wyatt', operator: 'eq',
-                not?: false)
-            result = query.compare(term, all: %w(first_name last_name))
-            expect(result.count).to eq(0)
+        it "overrides value" do
+            MongoidTesting::User.create!(age: 969)
+            result = query.compare(term, value: 969)
+            expect(result).to_not be_empty
+            expect(result).to be_all { |i| i['age'] == 969 }
         end
 
-        it "not all" do
-            term = double(field: 'name', value: 'wyatt', operator: 'ne',
-                not?: true)
-            result = query.compare(term, all: %w(first_name last_name))
-            expect(result.count).to eq(50)
+        it "works without passing a term" do
+            result = query.compare(field: 'age', operator: :eq, value: 30)
+            expect(result).to_not be_empty
+            expect(result).to be_all { |i| i['age'] == 30 }
         end
     end
 
