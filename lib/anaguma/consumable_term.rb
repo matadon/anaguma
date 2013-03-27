@@ -7,7 +7,7 @@ module Anaguma
         attr_reader :term
 
         delegate :field, :operator, :value, :quoting, :negated?, :plaintext,
-            :to_s, :quotes, to: :term
+            :to_s, :left_quote, :right_quote, :quotes, to: :term
 
         def initialize(term)
             @term = term

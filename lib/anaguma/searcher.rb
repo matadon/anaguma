@@ -1,5 +1,6 @@
 require 'anaguma/builder'
 require 'anaguma/merging_builder'
+require 'anaguma/maybe'
 require 'anaguma/consumable_term'
 require 'anaguma/search_parser'
 
@@ -20,12 +21,76 @@ module Anaguma
             self
         end
 
+        def self.search_in_specific_fields(*args)
+            options = args.last.is_a?(Hash) ? args.pop.dup : {}
+            fields = Hash[args.flatten.map(&:to_s).zip]
+            build_searchable_rule(options) do |term|
+                throw(:skip) unless fields.has_key?(term.field)
+                compare(term)
+            end
+        end
+
+        def self.search_in_any_of(*args)
+            options = args.last.is_a?(Hash) ? args.pop.dup : {}
+            fields = args.flatten.map(&:to_s)
+            allow_fields = Hash[[ options.delete(:field), 
+                options.delete(:fields) ].flatten.compact.zip]
+            build_searchable_rule(options) do |term|
+                throw(:skip) unless (allow_fields.empty? \
+                    or allow_fields.has_key?(term.field))
+                any_of { fields.each { |f| compare(term, field: f) } }
+            end
+        end
+
+        def self.search_in_all_of(*args)
+            options = args.last.is_a?(Hash) ? args.pop.dup : {}
+            fields = args.flatten.map(&:to_s)
+            allow_fields = Hash[[ options.delete(:field), 
+                options.delete(:fields) ].flatten.compact.zip]
+            build_searchable_rule(options) do |term|
+                throw(:skip) unless (allow_fields.empty? \
+                    or allow_fields.has_key?(term.field))
+                all_of { fields.each { |f| compare(term, field: f) } }
+            end
+        end
+
+        def self.search_in(*args)
+            options = args.last.is_a?(Hash) ? args.pop.dup : {}
+            fields = Hash[args.flatten.map(&:to_s).zip]
+            build_searchable_rule(options) do |term|
+                return(compare(term)) if fields.has_key?(term.field)
+                throw(:skip) unless term.field.nil?
+                any_of { fields.keys.each { |f| compare(term, field: f) } }
+            end
+        end
+
         private
 
+        #
+        # FIXME: Preserve line number?
+        #
+        def self.build_searchable_rule(options, &block)
+            if_condition = create_unique_method(:condition, &options[:if])
+            unless_condition = create_unique_method(:condition,
+                &options[:unless])
+            consume_term = (options[:consume] != false)
+            inner_rule = create_unique_method(:rule, &block)
+            rule do |term|
+                return if (if_condition and (not send(if_condition, term)))
+                return if (unless_condition and send(unless_condition, term))
+                catch(:skip) do
+                    send(inner_rule, term)
+                    term.consume! if consume_term
+                end
+            end
+        end
+
         def self.create_unique_method(group, name = nil, &block)
+            return unless block_given?
+            hash = block.hash.to_s(16)
             method_name = "_#{group}"
             method_name << "_#{name}" if name
-            method_name << "_#{Time.now.to_i}#{Time.now.usec}"
+            method_name << "_#{hash}#{Time.now.to_i}#{Time.now.usec}"
             define_method(method_name, &block)
             private(method_name)
             method_name

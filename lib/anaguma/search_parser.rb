@@ -84,9 +84,19 @@ module Anaguma
             end
 
             def quotes
+                left_quote + right_quote
+            end
+
+            def left_quote
                 content = _value.content
                 return("") unless content.is_a?(QuotedString)
-                "#{content.left}#{content.right}"
+                content.left
+            end
+
+            def right_quote
+                content = _value.content
+                return("") unless content.is_a?(QuotedString)
+                content.right
             end
 
             def quoting

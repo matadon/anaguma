@@ -1,22 +1,26 @@
 require 'anaguma/builder'
+require 'anaguma/query'
 
 module Anaguma
-    class MockQuery
-        def self.builder(base)
-            Anaguma::Builder.new(base, :condition)
-        end
-
+    class MockQuery < Anaguma::Query
         def self.monadic_methods
-            %w(condition clear)
+            %w(condition compare merge clear)
         end
 
-        def initialize(condition = nil)
-            @condition = condition
+        def initialize(scope = nil)
+            @scope = scope
         end
 
         def condition(term)
-            updated = [ @condition, term.to_s ].compact.join(" ").strip
+            updated = [ @scope, term.to_s ].compact.join(" ").strip
             self.class.new(updated)
+        end
+
+        def compare(term, options = {})
+            field, operator, value = parse_args_for_compare(term, options)
+            negation = term.negated? ? "!" : ""
+            quoted_value = "#{term.left_quote}#{value}#{term.right_quote}"
+            condition("#{negation}#{field}:#{operator}:#{quoted_value}")
         end
 
         def clear
@@ -24,7 +28,7 @@ module Anaguma
         end
 
         def to_s
-            @condition.to_s
+            @scope.to_s
         end
 
         def ==(other)
@@ -33,7 +37,7 @@ module Anaguma
 
         def merge(predicate, *queries)
             queries = queries.flatten.unshift(self)
-            return(queries.first.to_s) if (queries.length < 2)
+            return(queries.first) if (queries.length < 2)
             merged = queries.map(&:to_s).unshift(predicate).join(" ")
             self.class.new("(#{merged})")
         end
