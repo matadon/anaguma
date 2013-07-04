@@ -154,14 +154,11 @@ module Anaguma
             end
 
             def tuples
-                connection = @relation.connection
-                connection.select_all(@relation.to_sql).map do |tuple|
-                    tuple.each_pair do |key, value|
-                        next unless (column = @relation.columns_hash[key])
-                        tuple[key] = column.type_cast(value)
-                    end
-                    tuple
-                end
+                evaluate_tuples(@relation)
+            end
+
+            def columns_hash
+                @relation.columns_hash
             end
 
             def return_results_as(format)
@@ -185,6 +182,24 @@ module Anaguma
             end
 
             private
+
+            def evaluate_tuples(relation)
+                connection = relation.connection
+                connection.select_all(relation.to_sql).map do |tuple|
+                    tuple.each_pair do |key, value|
+                        tuple[key] = type_cast(key,tuple[key])
+                    end
+                    tuple
+                end
+            end
+
+            def type_cast(column_name, value)
+                if column = columns_hash[column_name]
+                  column.type_cast value
+                else
+                  value
+                end
+            end
 
             def chain(relation, format = nil)
                 self.class.new(relation, format || @_format)
