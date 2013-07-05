@@ -255,8 +255,7 @@ module Anaguma
 
             def where_term_for(field, operator, value)
               clause_before_condition = clause(:where)
-              quoted_field = @relation.connection.quote_column_name(field)
-              conditional = where("#{quoted_field} #{OPERATORS[operator]} ?", value)
+              conditional = where("#{field} #{OPERATORS[operator]} ?", value)
               (conditional.clause(:where) - clause_before_condition).first
             end
 
